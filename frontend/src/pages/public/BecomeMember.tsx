@@ -430,11 +430,25 @@ export const BecomeMember: React.FC = () => {
                         type="date" 
                         min="1940-01-01"
                         max={new Date().toISOString().slice(0, 10)}
+                        onInput={(e: React.FormEvent<HTMLInputElement>) => {
+                          const val = e.currentTarget.value;
+                          if (val) {
+                            const parts = val.split('-');
+                            if (parts[0] && parts[0].length > 4) {
+                              parts[0] = parts[0].slice(0, 4);
+                              e.currentTarget.value = parts.join('-');
+                            }
+                          }
+                        }}
                         {...register('dob', { 
                           required: 'Date of birth is required',
                           validate: (val) => {
                             if (!val) return 'Date of birth is required';
-                            const year = new Date(val).getFullYear();
+                            const parts = val.split('-');
+                            if (!parts[0] || parts[0].length !== 4) {
+                              return 'Year must be exactly 4 digits (e.g. 1995)';
+                            }
+                            const year = parseInt(parts[0], 10);
                             const currentYear = new Date().getFullYear();
                             if (isNaN(year) || year < 1940 || year > currentYear) {
                               return `Please enter a valid 4-digit birth year (between 1940 and ${currentYear})`;
