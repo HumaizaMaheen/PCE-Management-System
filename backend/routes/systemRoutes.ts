@@ -3,7 +3,8 @@ import {
   getAuditLogs, 
   getNotificationsLog, 
   getSettings, 
-  updateSettings 
+  updateSettings,
+  deleteNotificationLog
 } from '../controllers/systemController';
 import { authenticateJWT, authorizeRoles } from '../middleware/auth';
 
@@ -23,6 +24,14 @@ router.get(
   authenticateJWT,
   authorizeRoles('Super Admin', 'Viewer'),
   getNotificationsLog
+);
+
+// Delete Notification Log (Super Admin, Viewer)
+router.delete(
+  '/notifications-log/:id',
+  authenticateJWT,
+  authorizeRoles('Super Admin', 'Viewer'),
+  deleteNotificationLog
 );
 
 // System Settings

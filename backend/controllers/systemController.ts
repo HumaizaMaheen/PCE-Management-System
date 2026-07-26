@@ -236,3 +236,29 @@ export const updateSettings = async (req: AuthenticatedRequest, res: Response) =
     });
   }
 };
+
+/**
+ * Delete Notification Log Record
+ */
+export const deleteNotificationLog = async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params;
+  try {
+    if (id === 'all') {
+      await pool.query('DELETE FROM notification_logs');
+      return res.json({ success: true, message: 'All notification logs cleared successfully.' });
+    }
+
+    const [result] = await pool.query<any>('DELETE FROM notification_logs WHERE id = ?', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Notification record not found.' });
+    }
+
+    return res.json({ success: true, message: 'Notification log deleted successfully.' });
+  } catch (error: any) {
+    console.error('[DELETE NOTIFICATION ERROR]', error);
+    return res.status(500).json({
+      message: 'Failed to delete notification log.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
