@@ -412,18 +412,43 @@ const mockPayments: PaymentData[] = [
   }
 ];
 
+// Payments LocalStorage Persistence Helpers
+const getStoredPayments = (): PaymentData[] => {
+  const saved = localStorage.getItem('pce_payments');
+  if (saved !== null) {
+    try { return JSON.parse(saved); } catch (e) {}
+  }
+  localStorage.setItem('pce_payments', JSON.stringify(mockPayments));
+  return mockPayments;
+};
+
+const setStoredPayments = (list: PaymentData[]) => {
+  localStorage.setItem('pce_payments', JSON.stringify(list));
+};
+
 export const getPaymentQueue = async (params: {
   status?: string;
   search?: string;
   page?: number;
   limit?: number;
 }): Promise<PaymentsResponse> => {
-  if (isLiveStaticHost()) return { success: true, data: mockPayments, pagination: { total: mockPayments.length, page: 1, limit: 20, totalPages: 1 } };
+  const currentPayments = getStoredPayments();
+  if (isLiveStaticHost()) {
+    let filtered = [...currentPayments];
+    if (params.status && params.status !== 'All') {
+      filtered = filtered.filter(p => p.verification_status === params.status);
+    }
+    return { success: true, data: filtered, pagination: { total: filtered.length, page: 1, limit: 20, totalPages: 1 } };
+  }
   try {
     const response = await api.get<PaymentsResponse>('/payments/queue', { params });
     return response.data;
   } catch (e) {
-    return { success: true, data: mockPayments, pagination: { total: mockPayments.length, page: 1, limit: 20, totalPages: 1 } };
+    let filtered = [...currentPayments];
+    if (params.status && params.status !== 'All') {
+      filtered = filtered.filter(p => p.verification_status === params.status);
+    }
+    return { success: true, data: filtered, pagination: { total: filtered.length, page: 1, limit: 20, totalPages: 1 } };
   }
 };
 
@@ -431,6 +456,16 @@ export const verifyPayment = async (
   id: number,
   payload: { verification_status: 'Approved' | 'Rejected'; rejection_reason?: string }
 ): Promise<{ success: boolean; message: string; membershipId?: string; memberName?: string; email?: string; whatsappNo?: string; generatedPassword?: string }> => {
+  const currentPayments = getStoredPayments();
+  const target = currentPayments.find(p => p.id === id);
+  if (target) {
+    target.verification_status = payload.verification_status;
+    if (payload.rejection_reason) {
+      target.rejection_reason = payload.rejection_reason;
+    }
+    setStoredPayments(currentPayments);
+  }
+
   if (payload.verification_status === 'Rejected') {
     if (isLiveStaticHost()) {
       return {
@@ -445,9 +480,9 @@ export const verifyPayment = async (
       success: true,
       message: 'Payment verified and member activated.',
       membershipId: 'PCE-2026-1005',
-      memberName: 'Ayesha Khan',
-      email: 'ayesha.khan@gmail.com',
-      whatsappNo: '0300-1234567',
+      memberName: target?.applicant_name || 'Ayesha Khan',
+      email: target?.applicant_email || 'ayesha.khan@gmail.com',
+      whatsappNo: target?.whatsapp_no || '0300-1234567',
       generatedPassword: 'PCE@' + Math.floor(1000 + Math.random() * 9000)
     };
   }
@@ -465,9 +500,9 @@ export const verifyPayment = async (
       success: true,
       message: 'Payment verified and member activated.',
       membershipId: 'PCE-2026-1005',
-      memberName: 'Ayesha Khan',
-      email: 'ayesha.khan@gmail.com',
-      whatsappNo: '0300-1234567',
+      memberName: target?.applicant_name || 'Ayesha Khan',
+      email: target?.applicant_email || 'ayesha.khan@gmail.com',
+      whatsappNo: target?.whatsapp_no || '0300-1234567',
       generatedPassword: 'PCE@' + Math.floor(1000 + Math.random() * 9000)
     };
   }

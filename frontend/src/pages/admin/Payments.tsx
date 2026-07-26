@@ -182,7 +182,14 @@ export default function Payments() {
 
       if (res.success) {
         setVerifyMessage({ type: 'success', text: res.message });
-        fetchPaymentQueue();
+        
+        // Remove from current queue if filtering by specific status
+        setPayments(prev => {
+          if (selectedStatus !== 'All') {
+            return prev.filter(p => p.id !== selectedPayment.id);
+          }
+          return prev.map(p => p.id === selectedPayment.id ? { ...p, verification_status: action, rejection_reason: action === 'Rejected' ? rejectionReason : p.rejection_reason } : p);
+        });
 
         if (action === 'Approved' && res.membershipId) {
           setApprovedMemberInfo({
@@ -198,7 +205,7 @@ export default function Payments() {
           setTimeout(() => {
             setIsVerifyModalOpen(false);
             setVerifyMessage(null);
-          }, 3000);
+          }, 1500);
         }
       }
     } catch (err: any) {
