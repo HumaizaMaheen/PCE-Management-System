@@ -384,35 +384,76 @@ export const getPublicChallanPDF = async (req: Request, res: Response) => {
       }
     } else if (ref.startsWith('PCE-APP-')) {
       // It is an Application Reference Number
-      // Extract application ID
       const match = ref.match(/^PCE-APP-\d{4}-(\d{1,8})$/i);
       if (match) {
         const appId = parseInt(match[1], 10);
-        // Get the latest unpaid challan for this application
-        const [rows] = await pool.query<RowDataPacket[]>(
+        // Get latest unpaid challan first, or any latest challan for this application
+        let [rows] = await pool.query<RowDataPacket[]>(
           'SELECT id FROM challans WHERE application_id = ? AND status = "Unpaid" ORDER BY created_at DESC LIMIT 1',
           [appId]
         );
+        if (rows.length === 0) {
+          [rows] = await pool.query<RowDataPacket[]>(
+            'SELECT id FROM challans WHERE application_id = ? ORDER BY created_at DESC LIMIT 1',
+            [appId]
+          );
+        }
         if (rows.length > 0) {
           challanId = rows[0].id;
+        } else {
+          // Check if application exists and auto-create a Case A Challan on the fly
+          const [apps] = await pool.query<RowDataPacket[]>(
+            'SELECT id, full_name FROM applications WHERE id = ?',
+            [appId]
+          );
+          if (apps.length > 0) {
+            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const chnNum = `CHN-${dateStr}-${Math.floor(1000 + Math.random() * 9000)}`;
+            const dueDate = new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
+
+            const [ins] = await pool.query<any>(
+              `INSERT INTO challans (application_id, challan_number, total_amount, due_date, status)
+               VALUES (?, ?, 7000.00, ?, 'Unpaid')`,
+              [appId, chnNum, dueDate]
+            );
+            challanId = ins.insertId;
+
+            // Insert itemized dues
+            const currentMonth = new Date().toLocaleString('default', { month: 'short' }) + ' ' + new Date().getFullYear();
+            await pool.query(
+              `INSERT INTO dues_records (challan_id, application_id, dues_type, period, amount, status)
+               VALUES (?, ?, 'Admission Registration Fee', 'One-Time', 5000.00, 'Unpaid'),
+                      (?, ?, 'First Monthly Contribution', ?, 2000.00, 'Unpaid')`,
+              [challanId, appId, challanId, appId, currentMonth]
+            );
+          }
         }
       }
     } else if (ref.startsWith('PCE-BWP-')) {
       // It is a Member ID
-      const [rows] = await pool.query<RowDataPacket[]>(
+      let [rows] = await pool.query<RowDataPacket[]>(
         `SELECT c.id FROM challans c
          JOIN members m ON c.member_id = m.id
          WHERE m.membership_id = ? AND c.status = "Unpaid"
          ORDER BY c.created_at DESC LIMIT 1`,
         [ref]
       );
+      if (rows.length === 0) {
+        [rows] = await pool.query<RowDataPacket[]>(
+          `SELECT c.id FROM challans c
+           JOIN members m ON c.member_id = m.id
+           WHERE m.membership_id = ?
+           ORDER BY c.created_at DESC LIMIT 1`,
+          [ref]
+        );
+      }
       if (rows.length > 0) {
         challanId = rows[0].id;
       }
     }
 
     if (!challanId) {
-      return res.status(404).json({ message: 'No unpaid challan invoice found for this reference.' });
+      return res.status(404).json({ message: 'No challan invoice found for this reference.' });
     }
 
     const { filePath, filename } = await compileChallanPDFFile(challanId);

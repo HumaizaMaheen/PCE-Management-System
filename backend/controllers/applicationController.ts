@@ -294,7 +294,7 @@ export const trackApplication = async (req: Request, res: Response) => {
   try {
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT 
-        a.id, a.full_name, a.status, a.officer_remarks, a.created_at,
+        a.id, a.full_name, a.email, a.status, a.officer_remarks, a.created_at,
         m.membership_id, m.status AS member_status
       FROM applications a
       LEFT JOIN members m ON m.application_id = a.id
@@ -314,6 +314,8 @@ export const trackApplication = async (req: Request, res: Response) => {
       applicantName: app.full_name,
       status: app.membership_id ? 'Approved - Active Member' : app.status,
       membershipId: app.membership_id || null,
+      email: app.email || null,
+      initialPassword: app.membership_id ? 'PCE@2026' : null,
       officerRemarks: app.officer_remarks || null,
       submittedAt: app.created_at
     });
