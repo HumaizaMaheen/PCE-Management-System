@@ -26,6 +26,8 @@ export const validateApplication = [
     .trim()
     .notEmpty()
     .withMessage('Date of birth is required')
+    .matches(/^\d{4}-\d{2}-\d{2}$/)
+    .withMessage('Date of birth must be in 4-digit year format (YYYY-MM-DD)')
     .isISO8601()
     .withMessage('Date of birth must be a valid date (YYYY-MM-DD)'),
 
