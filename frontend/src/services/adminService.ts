@@ -553,6 +553,10 @@ export const updateMemberStatus = async (
 };
 
 export const deleteMember = async (id: number): Promise<{ success: boolean; message: string }> => {
+  const idx = mockMembers.findIndex(m => m.id === id);
+  if (idx !== -1) {
+    mockMembers.splice(idx, 1);
+  }
   if (isLiveStaticHost()) return { success: true, message: 'Member and all associated credentials purged successfully.' };
   try {
     const response = await api.delete<{ success: boolean; message: string }>(`/members/${id}`);

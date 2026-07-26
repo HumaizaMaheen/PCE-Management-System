@@ -242,7 +242,8 @@ export default function Members() {
                               const res = await deleteMember(m.id);
                               if (res.success) {
                                 alert(`Member ${m.membership_id} and all login credentials have been permanently deleted.`);
-                                fetchMembers();
+                                setMembers(prev => prev.filter(item => item.id !== m.id));
+                                setTotalCount(prev => Math.max(0, prev - 1));
                               }
                             } catch (err: any) {
                               alert(err.response?.data?.message || 'Failed to delete member.');
@@ -548,11 +549,13 @@ export default function Members() {
                           if (!window.confirm(`⚠️ DANGER: Are you sure you want to permanently DELETE member ${selectedMember.membership_id} (${selectedMember.full_name})?\n\nThis will permanently purge all associated login credentials, password, application data, payment records, and documents!`)) return;
                           try {
                             setStatusUpdating(true);
-                            const res = await deleteMember(selectedMember.id);
+                            const memberId = selectedMember.id;
+                            const res = await deleteMember(memberId);
                             if (res.success) {
                               alert(`Member ${selectedMember.membership_id} and all login credentials have been permanently deleted.`);
                               setIsModalOpen(false);
-                              fetchMembers();
+                              setMembers(prev => prev.filter(item => item.id !== memberId));
+                              setTotalCount(prev => Math.max(0, prev - 1));
                             }
                           } catch (err: any) {
                             alert(err.response?.data?.message || 'Failed to delete member.');
