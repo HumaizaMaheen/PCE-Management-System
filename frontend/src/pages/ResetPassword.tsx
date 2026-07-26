@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export const ResetPassword: React.FC = () => {
@@ -84,9 +84,9 @@ export const ResetPassword: React.FC = () => {
               <span>Your password has been reset successfully! Redirecting you to login...</span>
             </div>
             <div className="text-center pt-2">
-              <a href="/login" className="text-primary font-poppins text-xs font-semibold">
+              <Link to="/login" className="text-primary font-poppins text-xs font-semibold">
                 Click here if you are not redirected
-              </a>
+              </Link>
             </div>
           </div>
         ) : (
@@ -143,10 +143,10 @@ export const ResetPassword: React.FC = () => {
             </button>
 
             <div className="text-center pt-2">
-              <a href="/login" className="text-primary hover:text-primary-light font-poppins text-xs font-medium inline-flex items-center gap-1">
+              <Link to="/login" className="text-primary hover:text-primary-light font-poppins text-xs font-medium inline-flex items-center gap-1">
                 <span className="material-icons text-xs">arrow_back</span>
                 Back to Login
-              </a>
+              </Link>
             </div>
           </form>
         )}

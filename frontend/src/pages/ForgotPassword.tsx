@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export const ForgotPassword: React.FC = () => {
@@ -78,10 +79,10 @@ export const ForgotPassword: React.FC = () => {
             )}
 
             <div className="text-center pt-2">
-              <a href="/login" className="text-primary hover:text-primary-light font-poppins text-xs font-medium inline-flex items-center gap-1">
+              <Link to="/login" className="text-primary hover:text-primary-light font-poppins text-xs font-medium inline-flex items-center gap-1">
                 <span className="material-icons text-xs">arrow_back</span>
                 Back to Login
-              </a>
+              </Link>
             </div>
           </div>
         ) : (
@@ -120,10 +121,10 @@ export const ForgotPassword: React.FC = () => {
             </button>
 
             <div className="text-center pt-2">
-              <a href="/login" className="text-primary hover:text-primary-light font-poppins text-xs font-medium inline-flex items-center gap-1">
+              <Link to="/login" className="text-primary hover:text-primary-light font-poppins text-xs font-medium inline-flex items-center gap-1">
                 <span className="material-icons text-xs">arrow_back</span>
                 Back to Login
-              </a>
+              </Link>
             </div>
           </form>
         )}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export const Login: React.FC = () => {
@@ -126,9 +126,9 @@ export const Login: React.FC = () => {
                 <label htmlFor="password" className="block text-xs font-semibold text-gray-600 font-poppins">
                   Password
                 </label>
-                <a href="/forgot-password" className="text-xs text-primary hover:text-primary-light font-medium font-poppins">
+                <Link to="/forgot-password" className="text-xs text-primary hover:text-primary-light font-medium font-poppins">
                   Forgot password?
-                </a>
+                </Link>
               </div>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 material-icons text-gray-400 text-sm">lock</span>
