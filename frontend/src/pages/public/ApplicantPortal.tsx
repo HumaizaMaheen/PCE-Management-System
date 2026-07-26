@@ -234,27 +234,48 @@ export const ApplicantPortal: React.FC = () => {
               )}
 
               {(appData.status === 'Approved - Active Member' || appData.membershipId) && (
-                <div className="bg-primary/10 border-l-4 border-primary p-6 text-xs text-primary rounded-r-lg space-y-4 font-inter">
+                <div className="bg-primary/10 border-l-4 border-primary p-6 text-xs text-primary rounded-r-lg space-y-4 font-inter animate-fadeIn">
                   <div className="flex items-center gap-2">
                     <span className="material-icons text-2xl text-primary">verified</span>
                     <div>
                       <h4 className="font-bold text-sm font-poppins text-primary">Official Membership Active & Verified!</h4>
-                      <p className="text-gray-600 mt-0.5">Your payment has been verified and your official Chamber Membership has been issued.</p>
+                      <p className="text-gray-600 mt-0.5">Your payment receipt has been verified by the Chamber Officer and your official Member Account is active.</p>
                     </div>
                   </div>
 
-                  <div className="bg-white p-4 rounded-lg border border-primary/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-gray-400 block">Your Official Membership ID</span>
-                      <span className="text-base font-bold font-mono text-primary">{appData.membershipId || 'PCE-BWP-2026-000001'}</span>
+                  {/* Credentials Display Card */}
+                  <div className="bg-white p-5 rounded-lg border border-primary/20 space-y-3">
+                    <h5 className="text-xs font-bold font-poppins text-primary uppercase border-b border-gray-100 pb-2 flex items-center gap-1.5">
+                      <span className="material-icons text-sm">key</span>
+                      Your Official Member Portal Credentials
+                    </h5>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-gray-400 block">Membership ID</span>
+                        <span className="text-sm font-bold font-mono text-primary">{appData.membershipId || 'PCE-BWP-2026-000001'}</span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-gray-400 block">Username / Email</span>
+                        <span className="text-xs font-semibold font-mono text-gray-800 break-all">{appData.email || 'maheenhumaiza@gmail.com'}</span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-gray-400 block">Initial Password</span>
+                        <span className="text-xs font-bold font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">{appData.initialPassword || 'PCE@2026'}</span>
+                      </div>
                     </div>
-                    <Link
-                      to="/login"
-                      className="bg-primary hover:bg-[#004C38] text-white px-5 py-2.5 rounded-lg text-xs font-bold font-poppins shadow-sm transition flex items-center gap-1.5"
-                    >
-                      <span className="material-icons text-sm">login</span>
-                      Sign In to Member Portal
-                    </Link>
+
+                    <div className="pt-3 flex justify-end border-t border-gray-100 mt-2">
+                      <Link
+                        to="/login"
+                        className="bg-primary hover:bg-[#004C38] text-white px-5 py-2.5 rounded-lg text-xs font-bold font-poppins shadow-sm transition flex items-center gap-1.5"
+                      >
+                        <span className="material-icons text-sm">login</span>
+                        Sign In to Member Portal Now
+                      </Link>
+                    </div>
                   </div>
                 </div>
               )}

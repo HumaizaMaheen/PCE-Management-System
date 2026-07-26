@@ -14,6 +14,8 @@ export interface ApplicationTrackResponse {
   applicantName: string;
   status: 'Pending' | 'Approved - Awaiting Payment' | 'Rejected' | 'Needs More Information' | 'Approved - Active Member' | string;
   membershipId?: string | null;
+  email?: string | null;
+  initialPassword?: string | null;
   officerRemarks: string | null;
   submittedAt: string;
 }
@@ -57,9 +59,11 @@ export const trackApplication = async (ref: string): Promise<ApplicationTrackRes
       success: true,
       referenceNumber: ref,
       applicantName: 'Humaiza Maheen',
-      status: 'Approved - Awaiting Payment',
+      status: 'Approved - Active Member',
       membershipId: 'PCE-BWP-2026-000001',
-      officerRemarks: 'Payment receipt uploaded and verified. Account active.',
+      email: 'maheenhumaiza@gmail.com',
+      initialPassword: 'PCE@2026',
+      officerRemarks: 'Payment receipt uploaded and verified. Official membership activated.',
       submittedAt: new Date().toISOString()
     };
   }
