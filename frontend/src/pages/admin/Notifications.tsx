@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getNotificationsLog, NotificationLogData } from '../../services/adminService';
+import { getNotificationsLog, deleteNotificationLog, NotificationLogData } from '../../services/adminService';
 
 export default function Notifications() {
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
@@ -12,6 +12,7 @@ export default function Notifications() {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<boolean>(false);
 
   // Selected Notification Preview Modal
   const [selectedNotif, setSelectedNotif] = useState<NotificationLogData | null>(null);
@@ -40,6 +41,30 @@ export default function Notifications() {
   useEffect(() => {
     fetchNotifications();
   }, [selectedStatus, page]);
+
+  const handleDelete = async (id: number | string) => {
+    if (!window.confirm(id === 'all' ? 'Are you sure you want to CLEAR ALL notification logs?' : 'Are you sure you want to delete this notification log?')) return;
+    try {
+      setDeleting(true);
+      const res = await deleteNotificationLog(id);
+      if (res.success) {
+        if (id === 'all') {
+          setNotifications([]);
+          setTotalCount(0);
+        } else {
+          setNotifications(prev => prev.filter(n => n.id !== id));
+          setTotalCount(prev => Math.max(0, prev - 1));
+        }
+        if (selectedNotif && selectedNotif.id === id) {
+          setSelectedNotif(null);
+        }
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to delete notification.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +97,17 @@ export default function Notifications() {
             Dispatch history of outgoing email notifications, portal alerts, and WhatsApp message logs.
           </p>
         </div>
+
+        {notifications.length > 0 && (
+          <button
+            disabled={deleting}
+            onClick={() => handleDelete('all')}
+            className="bg-red-50 hover:bg-red-600 text-red-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold font-poppins transition border border-red-200 flex items-center gap-1 self-start md:self-auto cursor-pointer"
+          >
+            <span className="material-icons text-sm">delete_sweep</span>
+            Clear All Notifications
+          </button>
+        )}
       </div>
 
       {/* Filter Tabs */}
@@ -168,12 +204,22 @@ export default function Notifications() {
                       {new Date(n.created_at).toLocaleString()}
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <button
-                        onClick={() => setSelectedNotif(n)}
-                        className="bg-primary/10 hover:bg-primary text-primary hover:text-white px-3 py-1 rounded text-[11px] font-bold font-poppins transition"
-                      >
-                        View Content
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setSelectedNotif(n)}
+                          className="bg-primary/10 hover:bg-primary text-primary hover:text-white px-3 py-1 rounded text-[11px] font-bold font-poppins transition cursor-pointer"
+                        >
+                          View Content
+                        </button>
+                        <button
+                          disabled={deleting}
+                          onClick={() => handleDelete(n.id)}
+                          className="bg-red-50 hover:bg-red-600 text-red-600 hover:text-white p-1.5 rounded transition cursor-pointer border border-red-200"
+                          title="Delete Notification Log"
+                        >
+                          <span className="material-icons text-xs block">delete</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

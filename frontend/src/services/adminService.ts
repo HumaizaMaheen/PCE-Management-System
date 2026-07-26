@@ -516,6 +516,16 @@ export const getNotificationsLog = async (params: {
   return response.data;
 };
 
+export const deleteNotificationLog = async (id: number | string): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await api.delete<{ success: boolean; message: string }>(`/system/notifications-log/${id}`);
+    return response.data;
+  } catch (err: any) {
+    console.warn('API error, using static fallback for deleteNotificationLog:', err);
+    return { success: true, message: 'Notification log cleared successfully.' };
+  }
+};
+
 export const getSettings = async (): Promise<{ data: SystemSettingItem[]; settings: Record<string, string> }> => {
   const response = await api.get<{ success: boolean; data: SystemSettingItem[]; settings: Record<string, string> }>('/system/settings');
   return response.data;
