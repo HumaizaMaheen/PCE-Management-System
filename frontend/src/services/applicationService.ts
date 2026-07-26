@@ -25,18 +25,26 @@ export interface ApplicationTrackResponse {
  */
 export const submitApplication = async (formData: FormData): Promise<ApplicationSubmitResponse> => {
   const applicantName = (formData.get('full_name') as string) || 'Applicant';
-  const email = (formData.get('email') as string) || '';
-  const cnic = (formData.get('cnic') as string) || '';
+  const email = ((formData.get('email') as string) || '').toLowerCase().trim();
+  const rawCnic = (formData.get('cnic') as string) || '';
+  const cnicDigits = rawCnic.replace(/[^0-9]/g, '');
 
   // Check duplicate credentials against active Applications & Members in LocalStorage
   const savedApps = localStorage.getItem('pce_applications');
   const savedMembers = localStorage.getItem('pce_members');
   
-  let appsList: any[] = savedApps ? JSON.parse(savedApps) : [];
-  let membersList: any[] = savedMembers ? JSON.parse(savedMembers) : [];
+  let appsList: any[] = savedApps !== null ? JSON.parse(savedApps) : [];
+  let membersList: any[] = savedMembers !== null ? JSON.parse(savedMembers) : [];
 
-  const isDuplicateApp = appsList.some(a => a.email?.toLowerCase() === email.toLowerCase() || a.cnic === cnic);
-  const isDuplicateMember = membersList.some(m => m.email?.toLowerCase() === email.toLowerCase() || m.cnic === cnic);
+  const isDuplicateApp = appsList.some(a => 
+    (email !== '' && a.email?.toLowerCase().trim() === email) || 
+    (cnicDigits !== '' && a.cnic && a.cnic.replace(/[^0-9]/g, '') === cnicDigits)
+  );
+
+  const isDuplicateMember = membersList.some(m => 
+    (email !== '' && m.email?.toLowerCase().trim() === email) || 
+    (cnicDigits !== '' && m.cnic && m.cnic.replace(/[^0-9]/g, '') === cnicDigits)
+  );
 
   if (isDuplicateApp || isDuplicateMember) {
     throw {
@@ -53,7 +61,7 @@ export const submitApplication = async (formData: FormData): Promise<Application
     id: Date.now(),
     full_name: applicantName,
     father_husband_name: (formData.get('father_husband_name') as string) || '',
-    cnic,
+    cnic: rawCnic,
     dob: (formData.get('dob') as string) || '1995-01-01',
     gender: (formData.get('gender') as any) || 'Male',
     mobile_no: (formData.get('mobile_no') as string) || '',

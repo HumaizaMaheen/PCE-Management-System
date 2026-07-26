@@ -235,6 +235,8 @@ export const reviewApplication = async (id: number, payload: ReviewApplicationPa
   }
 };
 
+const cleanStr = (s?: string | null) => (s ? s.replace(/[^0-9]/g, '') : '');
+
 export const deleteApplication = async (id: number): Promise<{ success: boolean; message: string }> => {
   const currentApps = getStoredApplications();
   const targetApp = currentApps.find(a => a.id === id);
@@ -242,14 +244,14 @@ export const deleteApplication = async (id: number): Promise<{ success: boolean;
   setStoredApplications(updatedApps);
 
   if (targetApp) {
-    const targetCnic = targetApp.cnic;
-    const targetEmail = targetApp.email?.toLowerCase();
+    const targetCnicDigits = cleanStr(targetApp.cnic);
+    const targetEmail = targetApp.email?.toLowerCase().trim();
 
     // 1. Purge matching Members from LocalStorage if any
     const currentMembers = getStoredMembers();
     const updatedMembers = currentMembers.filter(m => 
-      m.cnic !== targetCnic && 
-      m.email?.toLowerCase() !== targetEmail && 
+      (targetCnicDigits === '' || cleanStr(m.cnic) !== targetCnicDigits) && 
+      (targetEmail === '' || m.email?.toLowerCase().trim() !== targetEmail) && 
       m.application_id !== id
     );
     setStoredMembers(updatedMembers);
@@ -257,8 +259,7 @@ export const deleteApplication = async (id: number): Promise<{ success: boolean;
     // 2. Purge matching Payments from LocalStorage
     const currentPayments = getStoredPayments();
     const updatedPayments = currentPayments.filter(p => 
-      p.applicant_email?.toLowerCase() !== targetEmail &&
-      p.email?.toLowerCase() !== targetEmail
+      (targetEmail === '' || (p.applicant_email?.toLowerCase().trim() !== targetEmail && p.email?.toLowerCase().trim() !== targetEmail))
     );
     setStoredPayments(updatedPayments);
   }
@@ -705,14 +706,14 @@ export const deleteMember = async (id: number): Promise<{ success: boolean; mess
   setStoredMembers(updatedMembers);
 
   if (targetMember) {
-    const targetCnic = targetMember.cnic;
-    const targetEmail = targetMember.email?.toLowerCase();
+    const targetCnicDigits = cleanStr(targetMember.cnic);
+    const targetEmail = targetMember.email?.toLowerCase().trim();
 
     // 1. Purge matching Applications from LocalStorage
     const currentApps = getStoredApplications();
     const updatedApps = currentApps.filter(a => 
-      a.cnic !== targetCnic && 
-      a.email?.toLowerCase() !== targetEmail && 
+      (targetCnicDigits === '' || cleanStr(a.cnic) !== targetCnicDigits) && 
+      (targetEmail === '' || a.email?.toLowerCase().trim() !== targetEmail) && 
       a.id !== targetMember.application_id
     );
     setStoredApplications(updatedApps);
@@ -720,8 +721,7 @@ export const deleteMember = async (id: number): Promise<{ success: boolean; mess
     // 2. Purge matching Payments from LocalStorage
     const currentPayments = getStoredPayments();
     const updatedPayments = currentPayments.filter(p => 
-      p.applicant_email?.toLowerCase() !== targetEmail &&
-      p.email?.toLowerCase() !== targetEmail
+      (targetEmail === '' || (p.applicant_email?.toLowerCase().trim() !== targetEmail && p.email?.toLowerCase().trim() !== targetEmail))
     );
     setStoredPayments(updatedPayments);
   }
