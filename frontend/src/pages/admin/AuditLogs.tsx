@@ -25,13 +25,15 @@ export default function AuditLogs() {
       if (search) params.search = search;
 
       const res = await getAuditLogs(params);
-      if (res.success) {
+      if (res && res.success && Array.isArray(res.data)) {
         setLogs(res.data);
-        setTotalCount(res.pagination.total);
-        setTotalPages(res.pagination.totalPages);
+        setTotalCount(res.pagination?.total ?? res.data.length);
+        setTotalPages(res.pagination?.totalPages ?? 1);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to fetch system audit logs');
+      if (!err.message?.includes('403')) {
+        setError(err.response?.data?.message || err.message || 'Failed to fetch system audit logs');
+      }
     } finally {
       setLoading(false);
     }

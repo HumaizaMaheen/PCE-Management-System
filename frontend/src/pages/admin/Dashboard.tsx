@@ -27,18 +27,24 @@ export default function Dashboard() {
           try {
             const profile = await getMemberMe();
             setMemberProfile(profile);
-          } catch (e) {
-            // If profile not linked yet
-          }
+          } catch (e) {}
         } else {
-          const kpiData = await getDashboardKPIs();
-          setKpis(kpiData);
+          try {
+            const kpiData = await getDashboardKPIs();
+            setKpis(kpiData);
+          } catch (e) {}
 
-          const appsData = await getApplications({ status: 'Pending', limit: 5 });
-          setRecentApps(appsData.data);
+          try {
+            const appsData = await getApplications({ status: 'Pending', limit: 5 });
+            if (appsData && Array.isArray(appsData.data)) {
+              setRecentApps(appsData.data);
+            }
+          } catch (e) {}
         }
       } catch (err: any) {
-        setError(err.message || 'Failed to fetch dashboard data');
+        if (err.message && !err.message.includes('403')) {
+          setError(err.message || 'Failed to fetch dashboard data');
+        }
       } finally {
         setLoading(false);
       }
@@ -55,7 +61,7 @@ export default function Dashboard() {
     );
   }
 
-  if (error) {
+  if (error && !error.includes('403')) {
     return (
       <div className="bg-danger/10 border border-danger/20 text-danger p-4 rounded-lg flex items-center gap-3">
         <span className="material-icons">error</span>
