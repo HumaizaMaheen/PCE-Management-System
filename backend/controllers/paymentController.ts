@@ -855,3 +855,124 @@ export const updateMemberStatus = async (req: AuthenticatedRequest, res: Respons
   }
 };
 
+/**
+ * Permanently Delete Member Record, Application, and Login Credentials
+ */
+export const deleteMember = async (req: AuthenticatedRequest, res: Response) => {
+  const { id } = req.params;
+  const officerId = req.user?.id || null;
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    // 1. Fetch Member record
+    const [memberRows] = await connection.query<RowDataPacket[]>(
+      'SELECT id, membership_id, full_name, user_id, application_id FROM members WHERE id = ? FOR UPDATE',
+      [id]
+    );
+
+    if (memberRows.length === 0) {
+      await connection.rollback();
+      connection.release();
+      return res.status(404).json({ message: 'Member record not found.' });
+    }
+
+    const member = memberRows[0];
+
+    // 2. Fetch associated challans
+    const [challanRows] = await connection.query<RowDataPacket[]>(
+      'SELECT id FROM challans WHERE member_id = ? OR (application_id = ? AND application_id IS NOT NULL)',
+      [member.id, member.application_id]
+    );
+    const challanIds = challanRows.map(c => c.id);
+
+    if (challanIds.length > 0) {
+      // Delete payments
+      await connection.query(
+        `DELETE FROM payments WHERE challan_id IN (?)`,
+        [challanIds]
+      );
+
+      // Delete dues_records
+      await connection.query(
+        `DELETE FROM dues_records WHERE challan_id IN (?) OR member_id = ?`,
+        [challanIds, member.id]
+      );
+
+      // Delete transactions
+      await connection.query(
+        `DELETE FROM transactions WHERE challan_id IN (?)`,
+        [challanIds]
+      );
+
+      // Delete challans
+      await connection.query(
+        `DELETE FROM challans WHERE id IN (?)`,
+        [challanIds]
+      );
+    }
+
+    // 3. Delete documents
+    await connection.query(
+      'DELETE FROM documents WHERE member_id = ? OR (application_id = ? AND application_id IS NOT NULL)',
+      [member.id, member.application_id]
+    );
+
+    // 4. Delete member record
+    await connection.query(
+      'DELETE FROM members WHERE id = ?',
+      [member.id]
+    );
+
+    // 5. Delete login user account (purges login email & password)
+    if (member.user_id) {
+      await connection.query(
+        'DELETE FROM users WHERE id = ?',
+        [member.user_id]
+      );
+    }
+
+    // 6. Delete application record
+    if (member.application_id) {
+      await connection.query(
+        'DELETE FROM applications WHERE id = ?',
+        [member.application_id]
+      );
+    }
+
+    // Audit log
+    const ipAddress = req.ip || req.socket.remoteAddress || null;
+    const userAgent = req.headers['user-agent'] || null;
+
+    await connection.query(
+      `INSERT INTO audit_log (user_id, action, entity_name, entity_id, old_values, ip_address, user_agent)
+       VALUES (?, 'DELETE_MEMBER', 'members', ?, ?, ?, ?)`,
+      [
+        officerId,
+        id,
+        JSON.stringify({ membership_id: member.membership_id, full_name: member.full_name, user_id: member.user_id }),
+        ipAddress,
+        userAgent
+      ]
+    );
+
+    await connection.commit();
+    connection.release();
+
+    return res.json({
+      success: true,
+      message: `Member ${member.membership_id} and all associated login credentials have been permanently deleted.`
+    });
+
+  } catch (error: any) {
+    await connection.rollback();
+    connection.release();
+    console.error('[DELETE MEMBER ERROR]', error);
+    return res.status(500).json({
+      message: 'An error occurred while deleting the member record.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+

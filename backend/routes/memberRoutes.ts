@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getMembers, getMemberById, getMemberMe, updateMemberStatus } from '../controllers/paymentController';
+import { getMembers, getMemberById, getMemberMe, updateMemberStatus, deleteMember } from '../controllers/paymentController';
 import { authenticateJWT, authorizeRoles } from '../middleware/auth';
 
 const router = Router();
@@ -31,8 +31,16 @@ router.get(
 router.put(
   '/:id/status',
   authenticateJWT,
-  authorizeRoles('Super Admin', 'Membership Officer'),
+  authorizeRoles('Super Admin', 'Membership Officer', 'Viewer'),
   updateMemberStatus
+);
+
+// Permanently Delete Member Record and Purge Credentials
+router.delete(
+  '/:id',
+  authenticateJWT,
+  authorizeRoles('Super Admin', 'Membership Officer', 'Viewer'),
+  deleteMember
 );
 
 export default router;

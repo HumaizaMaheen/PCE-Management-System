@@ -154,22 +154,52 @@ export const submitApplication = async (req: Request, res: Response) => {
   try {
     await connection.beginTransaction();
 
-    // Check unique CNIC
-    const [existing] = await connection.query<RowDataPacket[]>(
-      'SELECT id FROM applications WHERE cnic = ?',
-      [cnic]
+    // Check unique CNIC in applications and members
+    const [existingCnicApp] = await connection.query<RowDataPacket[]>(
+      'SELECT id FROM applications WHERE cnic = ?', [cnic]
+    );
+    const [existingCnicMem] = await connection.query<RowDataPacket[]>(
+      'SELECT id FROM members WHERE cnic = ?', [cnic]
     );
 
-    if (existing.length > 0) {
+    if (existingCnicApp.length > 0 || existingCnicMem.length > 0) {
       cleanupUploadedFiles(files);
       await connection.rollback();
       connection.release();
       return res.status(400).json({
+        message: 'This CNIC is already registered in our system. Please check your existing application status or sign in.',
         errors: [{
           type: 'field',
           value: cnic,
-          msg: 'An application with this CNIC already exists',
+          msg: 'This CNIC is already registered in our system. Please check your existing application status or sign in.',
           path: 'cnic',
+          location: 'body'
+        }]
+      });
+    }
+
+    // Check unique Email in applications, members, and users
+    const [existingEmailApp] = await connection.query<RowDataPacket[]>(
+      'SELECT id FROM applications WHERE email = ?', [email]
+    );
+    const [existingEmailMem] = await connection.query<RowDataPacket[]>(
+      'SELECT id FROM members WHERE email = ?', [email]
+    );
+    const [existingEmailUser] = await connection.query<RowDataPacket[]>(
+      'SELECT id FROM users WHERE email = ?', [email]
+    );
+
+    if (existingEmailApp.length > 0 || existingEmailMem.length > 0 || existingEmailUser.length > 0) {
+      cleanupUploadedFiles(files);
+      await connection.rollback();
+      connection.release();
+      return res.status(400).json({
+        message: 'This Email Address is already registered in our system. Please check your existing application status or sign in.',
+        errors: [{
+          type: 'field',
+          value: email,
+          msg: 'This Email Address is already registered in our system. Please check your existing application status or sign in.',
+          path: 'email',
           location: 'body'
         }]
       });
