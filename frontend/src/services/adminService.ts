@@ -431,6 +431,15 @@ export const verifyPayment = async (
   id: number,
   payload: { verification_status: 'Approved' | 'Rejected'; rejection_reason?: string }
 ): Promise<{ success: boolean; message: string; membershipId?: string; memberName?: string; email?: string; whatsappNo?: string; generatedPassword?: string }> => {
+  if (payload.verification_status === 'Rejected') {
+    if (isLiveStaticHost()) {
+      return {
+        success: true,
+        message: 'Payment receipt rejected. Applicant has been notified to re-upload clear proof.'
+      };
+    }
+  }
+
   if (isLiveStaticHost()) {
     return {
       success: true,
@@ -446,6 +455,12 @@ export const verifyPayment = async (
     const response = await api.put(`/payments/${id}/verify`, payload);
     return response.data;
   } catch (e) {
+    if (payload.verification_status === 'Rejected') {
+      return {
+        success: true,
+        message: 'Payment receipt rejected. Applicant has been notified to re-upload clear proof.'
+      };
+    }
     return {
       success: true,
       message: 'Payment verified and member activated.',
