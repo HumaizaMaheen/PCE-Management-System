@@ -142,7 +142,8 @@ export default function Applications() {
       const res = await deleteApplication(id);
       if (res.success) {
         setIsModalOpen(false);
-        fetchApplications();
+        setApplications(prev => prev.filter(app => app.id !== id));
+        setTotalCount(prev => Math.max(0, prev - 1));
       }
     } catch (err: any) {
       alert(err.response?.data?.message || err.message || 'Failed to delete application.');
@@ -617,7 +618,17 @@ export default function Applications() {
               </div>
 
               {/* Footer */}
-              <div className="bg-gray-50 px-6 py-3.5 flex justify-end gap-2 border-t border-gray-100">
+              <div className="bg-gray-50 px-6 py-3.5 flex justify-between items-center border-t border-gray-100">
+                {canReview && selectedApp ? (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteApplication(selectedApp.id, selectedApp.full_name)}
+                    className="bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 px-4 py-2 rounded-lg text-xs font-bold font-poppins transition flex items-center gap-1 cursor-pointer"
+                  >
+                    <span className="material-icons text-sm">delete_forever</span>
+                    Delete Application
+                  </button>
+                ) : <div />}
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

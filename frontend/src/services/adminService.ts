@@ -220,6 +220,10 @@ export const reviewApplication = async (id: number, payload: ReviewApplicationPa
 };
 
 export const deleteApplication = async (id: number): Promise<{ success: boolean; message: string }> => {
+  const idx = mockApplications.findIndex(a => a.id === id);
+  if (idx !== -1) {
+    mockApplications.splice(idx, 1);
+  }
   if (isLiveStaticHost()) return { success: true, message: 'Application deleted successfully.' };
   try {
     const response = await api.delete<{ success: boolean; message: string }>(`/applications/${id}`);
