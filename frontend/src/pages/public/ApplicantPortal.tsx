@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { trackApplication, ApplicationTrackResponse } from '../../services/applicationService';
+import { printChallanHTML } from '../../utils/challanPrintHelper';
 
 export const ApplicantPortal: React.FC = () => {
   const [refNumber, setRefNumber] = useState<string>('');
@@ -205,15 +206,29 @@ export const ApplicantPortal: React.FC = () => {
                     Transfer the total PKR 7,000 to the official bank account (Habib Bank Ltd, Account Title: Pakistan Chamber of Education, IBAN: PK12 HABB 0012 3456 7890 1203). Take a photograph/screenshot of your payment confirmation voucher, and send it to our office WhatsApp number <strong>+92 62 1234567</strong>.
                   </p>
                   <div className="pt-2">
-                    <a 
-                      href={`http://localhost:5000/api/challans/public/${appData.referenceNumber}/pdf`}
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="inline-flex items-center gap-2 bg-primary hover:bg-[#004C38] text-white px-5 py-2.5 rounded-lg text-xs font-bold font-poppins shadow-sm transition"
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        printChallanHTML({
+                          challanNumber: `CHN-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-5667`,
+                          payerName: appData.applicantName,
+                          payerRefLabel: 'Application Ref',
+                          payerRefValue: appData.referenceNumber,
+                          cnic: '31202-XXXXXXX-X',
+                          issueDate: new Date().toLocaleDateString(),
+                          dueDate: new Date(Date.now() + 15 * 86400000).toLocaleDateString(),
+                          totalAmount: 7000,
+                          dues: [
+                            { type: 'Admission Registration Fee', period: 'One-Time', amount: 5000 },
+                            { type: 'First Monthly Membership Contribution', period: `${new Date().toLocaleString('default', { month: 'short' })} ${new Date().getFullYear()}`, amount: 2000 }
+                          ]
+                        });
+                      }}
+                      className="inline-flex items-center gap-2 bg-primary hover:bg-[#004C38] text-white px-5 py-2.5 rounded-lg text-xs font-bold font-poppins shadow-sm transition cursor-pointer"
                     >
                       <span className="material-icons text-sm">picture_as_pdf</span>
                       Download Dues Challan PDF
-                    </a>
+                    </button>
                   </div>
                 </div>
               )}

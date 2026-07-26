@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getChallans, generateMonthlyDues, sendChallanEmail, ChallanData } from '../../services/adminService';
 import api from '../../services/api';
+import { printChallanHTML } from '../../utils/challanPrintHelper';
 
 export default function Challans() {
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
@@ -60,7 +61,7 @@ export default function Challans() {
     fetchChallans();
   };
 
-  // Download authenticated PDF blob
+  // Download authenticated PDF blob with fallback
   const handleDownloadPDF = async (id: number, challanNumber: string) => {
     try {
       const response = await api.get(`/challans/${id}/pdf`, { responseType: 'blob' });
@@ -74,7 +75,20 @@ export default function Challans() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
-      alert('Failed to download PDF challan. Please try again.');
+      const selected = challans.find(c => c.id === id);
+      const name = selected ? (selected.member_name || selected.applicant_name || 'Member') : 'Member';
+      printChallanHTML({
+        challanNumber: challanNumber,
+        payerName: name,
+        payerRefLabel: selected?.member_id ? 'Membership ID' : 'Application Ref',
+        payerRefValue: selected ? (selected.membership_id || String(selected.application_id_ref) || 'N/A') : 'N/A',
+        issueDate: new Date().toLocaleDateString(),
+        dueDate: selected ? new Date(selected.due_date).toLocaleDateString() : new Date().toLocaleDateString(),
+        totalAmount: selected ? Number(selected.total_amount) : 0,
+        dues: [
+          { type: 'Membership Dues', period: 'Monthly Dues', amount: selected ? Number(selected.total_amount) : 0 }
+        ]
+      });
     }
   };
 
