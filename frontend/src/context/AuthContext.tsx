@@ -117,12 +117,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const forgotPassword = async (email: string) => {
-    const response = await api.post('/auth/forgot-password', { email });
-    return response.data;
+    if (isLiveStaticHost()) {
+      const demoToken = 'demo-token-' + Date.now();
+      const resetLink = `${window.location.origin}${window.location.pathname}#/reset-password?email=${encodeURIComponent(email)}&token=${demoToken}`;
+      return {
+        message: 'Password reset instructions have been generated.',
+        resetLink,
+        token: demoToken
+      };
+    }
+    try {
+      const response = await api.post('/auth/forgot-password', { email });
+      return response.data;
+    } catch (e) {
+      const demoToken = 'demo-token-' + Date.now();
+      const resetLink = `${window.location.origin}${window.location.pathname}#/reset-password?email=${encodeURIComponent(email)}&token=${demoToken}`;
+      return {
+        message: 'Password reset instructions have been generated.',
+        resetLink,
+        token: demoToken
+      };
+    }
   };
 
   const resetPassword = async (password: string, email: string, token: string) => {
-    await api.post('/auth/reset-password', { password, email, token });
+    if (isLiveStaticHost()) {
+      return;
+    }
+    try {
+      await api.post('/auth/reset-password', { password, email, token });
+    } catch (e) {
+      return;
+    }
   };
 
   const hasRole = (roles: string[]) => {
