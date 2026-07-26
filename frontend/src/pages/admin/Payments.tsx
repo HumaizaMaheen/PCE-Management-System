@@ -3,6 +3,7 @@ import {
   getPaymentQueue, 
   uploadPaymentReceipt, 
   verifyPayment, 
+  deletePayment,
   getChallans, 
   PaymentData, 
   ChallanData 
@@ -163,13 +164,31 @@ export default function Payments() {
     setVerifyMessage(null);
   };
 
+  const handleDeletePayment = async (id: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to permanently delete payment receipt record #${id}?`)) return;
+
+    try {
+      setLoading(true);
+      const res = await deletePayment(id);
+      if (res.success) {
+        setIsVerifyModalOpen(false);
+        setPayments(prev => prev.filter(p => p.id !== id));
+        setTotalCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || 'Failed to delete payment receipt.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Submit Verification Action (Approve / Reject)
   const handleVerifySubmit = async (action: 'Approved' | 'Rejected') => {
     if (!selectedPayment) return;
-    if (action === 'Rejected' && (!rejectionReason || rejectionReason.trim() === '')) {
-      setVerifyMessage({ type: 'error', text: 'A rejection reason is required before rejecting a payment.' });
-      return;
-    }
+    const finalReason = action === 'Rejected' 
+      ? (rejectionReason && rejectionReason.trim() !== '' ? rejectionReason : 'Payment receipt verification failed or image unreadable.')
+      : undefined;
 
     try {
       setVerifySubmitting(true);
@@ -177,7 +196,7 @@ export default function Payments() {
 
       const res = await verifyPayment(selectedPayment.id, {
         verification_status: action,
-        rejection_reason: action === 'Rejected' ? rejectionReason : undefined
+        rejection_reason: finalReason
       });
 
       if (res.success) {
@@ -188,7 +207,7 @@ export default function Payments() {
           if (selectedStatus !== 'All') {
             return prev.filter(p => p.id !== selectedPayment.id);
           }
-          return prev.map(p => p.id === selectedPayment.id ? { ...p, verification_status: action, rejection_reason: action === 'Rejected' ? rejectionReason : p.rejection_reason } : p);
+          return prev.map(p => p.id === selectedPayment.id ? { ...p, verification_status: action, rejection_reason: finalReason || p.rejection_reason } : p);
         });
 
         if (action === 'Approved' && res.membershipId) {
@@ -205,7 +224,7 @@ export default function Payments() {
           setTimeout(() => {
             setIsVerifyModalOpen(false);
             setVerifyMessage(null);
-          }, 1500);
+          }, 1200);
         }
       }
     } catch (err: any) {
@@ -361,14 +380,23 @@ export default function Payments() {
                           {p.verification_status}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="px-5 py-3 text-right flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => handleOpenVerifyModal(p)}
-                          className="bg-primary/10 hover:bg-primary text-primary hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold font-poppins transition flex items-center gap-1 ml-auto"
+                          className="bg-primary/10 hover:bg-primary text-primary hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold font-poppins transition flex items-center gap-1"
                         >
                           <span className="material-icons text-sm">visibility</span>
                           Review & Verify
                         </button>
+                        {canVerify && (
+                          <button
+                            onClick={(e) => handleDeletePayment(p.id, e)}
+                            title="Delete Payment Record"
+                            className="bg-danger/10 hover:bg-danger text-danger hover:text-white p-1.5 rounded-lg text-xs transition"
+                          >
+                            <span className="material-icons text-sm block">delete</span>
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );

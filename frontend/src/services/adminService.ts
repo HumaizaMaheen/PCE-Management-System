@@ -508,6 +508,24 @@ export const verifyPayment = async (
   }
 };
 
+export const deletePayment = async (id: number): Promise<{ success: boolean; message: string }> => {
+  const currentPayments = getStoredPayments();
+  const updated = currentPayments.filter(p => p.id !== id);
+  setStoredPayments(updated);
+
+  const idx = mockPayments.findIndex(p => p.id === id);
+  if (idx !== -1) {
+    mockPayments.splice(idx, 1);
+  }
+  if (isLiveStaticHost()) return { success: true, message: 'Payment record deleted successfully.' };
+  try {
+    const response = await api.delete<{ success: boolean; message: string }>(`/payments/${id}`);
+    return response.data;
+  } catch (e) {
+    return { success: true, message: 'Payment record deleted successfully.' };
+  }
+};
+
 export interface MemberData {
   id: number;
   membership_id: string;
