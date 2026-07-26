@@ -20,8 +20,17 @@ export const Login: React.FC = () => {
     setError('');
 
     try {
-      await login(email, password, rememberMe);
-      navigate('/admin/dashboard');
+      const loggedUser = await login(email, password, rememberMe);
+      if (
+        loggedUser.role === 'Super Admin' || 
+        loggedUser.role === 'Admin' || 
+        loggedUser.role === 'Finance Officer' || 
+        loggedUser.role === 'Membership Officer'
+      ) {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/portal');
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid email or password. Please try again.');
     } finally {

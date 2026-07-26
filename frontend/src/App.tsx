@@ -115,11 +115,11 @@ const AppRoutes: React.FC = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Administrative Routes (Protected & RBAC Enforced) */}
+      {/* Administrative Routes (Protected & Admin RBAC Enforced) */}
       <Route
         path="/admin"
         element={
-          <ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'Finance Officer', 'Membership Officer', 'Viewer']}>
+          <ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'Finance Officer', 'Membership Officer']}>
             <AdminLayout />
           </ProtectedRoute>
         }
@@ -128,13 +128,17 @@ const AppRoutes: React.FC = () => {
         
         <Route 
           path="dashboard" 
-          element={<Dashboard />} 
+          element={
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'Finance Officer', 'Membership Officer']}>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
         />
         
         <Route 
           path="applications" 
           element={
-            <ProtectedRoute allowedRoles={['Super Admin', 'Membership Officer', 'Viewer']}>
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'Membership Officer']}>
               <Applications />
             </ProtectedRoute>
           } 
@@ -143,7 +147,7 @@ const AppRoutes: React.FC = () => {
         <Route 
           path="members" 
           element={
-            <ProtectedRoute allowedRoles={['Super Admin', 'Finance Officer', 'Membership Officer', 'Viewer']}>
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'Finance Officer', 'Membership Officer']}>
               <Members />
             </ProtectedRoute>
           } 
@@ -152,7 +156,7 @@ const AppRoutes: React.FC = () => {
         <Route 
           path="documents" 
           element={
-            <ProtectedRoute allowedRoles={['Super Admin', 'Membership Officer', 'Viewer']}>
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'Membership Officer']}>
               <DocumentsPlaceholder />
             </ProtectedRoute>
           } 
@@ -161,7 +165,7 @@ const AppRoutes: React.FC = () => {
         <Route 
           path="dues" 
           element={
-            <ProtectedRoute allowedRoles={['Super Admin', 'Finance Officer', 'Viewer']}>
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'Finance Officer']}>
               <DuesPlaceholder />
             </ProtectedRoute>
           } 
@@ -170,7 +174,7 @@ const AppRoutes: React.FC = () => {
         <Route 
           path="challans" 
           element={
-            <ProtectedRoute allowedRoles={['Super Admin', 'Finance Officer', 'Viewer']}>
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'Finance Officer']}>
               <Challans />
             </ProtectedRoute>
           } 
@@ -179,27 +183,17 @@ const AppRoutes: React.FC = () => {
         <Route 
           path="payments" 
           element={
-            <ProtectedRoute allowedRoles={['Super Admin', 'Finance Officer', 'Viewer']}>
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'Finance Officer']}>
               <Payments />
             </ProtectedRoute>
           } 
         />
-
         
         <Route 
           path="accounting" 
           element={
-            <ProtectedRoute allowedRoles={['Super Admin', 'Finance Officer', 'Viewer']}>
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'Finance Officer']}>
               <Accounting />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="notifications" 
-          element={
-            <ProtectedRoute allowedRoles={['Super Admin', 'Viewer']}>
-              <Notifications />
             </ProtectedRoute>
           } 
         />
@@ -207,8 +201,17 @@ const AppRoutes: React.FC = () => {
         <Route 
           path="audit-logs" 
           element={
-            <ProtectedRoute allowedRoles={['Super Admin', 'Viewer']}>
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin']}>
               <AuditLogs />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="notifications" 
+          element={
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'Finance Officer', 'Membership Officer']}>
+              <Notifications />
             </ProtectedRoute>
           } 
         />
@@ -216,7 +219,7 @@ const AppRoutes: React.FC = () => {
         <Route 
           path="settings" 
           element={
-            <ProtectedRoute allowedRoles={['Super Admin', 'Viewer']}>
+            <ProtectedRoute allowedRoles={['Super Admin', 'Admin']}>
               <Settings />
             </ProtectedRoute>
           } 

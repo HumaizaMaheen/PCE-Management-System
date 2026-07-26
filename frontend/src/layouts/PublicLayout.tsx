@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export const PublicLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const toggleDropdown = (name: string) => {
     if (activeDropdown === name) {
@@ -128,19 +130,59 @@ export const PublicLayout: React.FC = () => {
           </nav>
 
           {/* Desktop CTAs */}
-          <div className="hidden lg:flex items-center gap-3">
-            <Link 
-              to="/login" 
-              className="text-primary hover:text-[#004C38] border border-primary/20 hover:border-primary/40 font-poppins font-medium text-xs px-4 py-2 rounded-lg transition"
-            >
-              Portal Login
-            </Link>
-            <Link 
-              to="/apply" 
-              className="bg-accent hover:bg-accent-dark text-white font-poppins font-medium text-xs px-4.5 py-2.5 rounded-lg shadow-sm transition inline-block text-center"
-            >
-              Become a Member
-            </Link>
+          <div className="hidden lg:flex items-center gap-3 font-poppins">
+            {user ? (
+              user.role === 'Super Admin' || user.role === 'Admin' || user.role === 'Finance Officer' || user.role === 'Membership Officer' ? (
+                <div className="flex items-center gap-2">
+                  <Link 
+                    to="/admin/dashboard" 
+                    className="bg-primary hover:bg-[#004C38] text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm transition flex items-center gap-1.5"
+                  >
+                    <span className="material-icons text-sm">dashboard</span>
+                    Admin Workspace
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => logout()}
+                    className="text-gray-500 hover:text-danger text-xs font-semibold px-2 py-1 transition"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Link 
+                    to="/portal" 
+                    className="bg-[#C8A951] hover:bg-[#A08236] text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm transition flex items-center gap-1.5"
+                  >
+                    <span className="material-icons text-sm">account_circle</span>
+                    My Member Portal
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => logout()}
+                    className="text-gray-500 hover:text-danger text-xs font-semibold px-2 py-1 transition"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )
+            ) : (
+              <>
+                <Link 
+                  to="/login" 
+                  className="text-primary hover:text-[#004C38] border border-primary/20 hover:border-primary/40 font-medium text-xs px-4 py-2 rounded-lg transition"
+                >
+                  Portal Login
+                </Link>
+                <Link 
+                  to="/apply" 
+                  className="bg-accent hover:bg-accent-dark text-white font-medium text-xs px-4.5 py-2.5 rounded-lg shadow-sm transition inline-block text-center font-bold"
+                >
+                  Become a Member
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}

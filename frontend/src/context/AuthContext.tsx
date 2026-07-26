@@ -4,14 +4,14 @@ import api, { isLiveStaticHost } from '../services/api';
 export interface User {
   id: number;
   email: string;
-  role: 'Super Admin' | 'Finance Officer' | 'Membership Officer' | 'Viewer';
+  role: 'Super Admin' | 'Finance Officer' | 'Membership Officer' | 'Admin' | 'Member' | 'Viewer';
   full_name: string;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string, rememberMe: boolean) => Promise<void>;
+  login: (email: string, password: string, rememberMe: boolean) => Promise<User>;
   logout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<{ message: string; resetLink?: string; token?: string }>;
   resetPassword: (password: string, email: string, token: string) => Promise<void>;
@@ -63,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
-  const login = async (email: string, password: string, rememberMe: boolean) => {
+  const login = async (email: string, password: string, rememberMe: boolean): Promise<User> => {
     const isSuperAdmin = email.toLowerCase().includes('admin');
     const nameParts = email.split('@')[0].split(/[._-]/);
     const formattedName = nameParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
@@ -72,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       id: isSuperAdmin ? 1 : Math.floor(10 + Math.random() * 90),
       email,
       full_name: isSuperAdmin ? 'Super Admin' : (formattedName || 'Chamber Member'),
-      role: isSuperAdmin ? 'Super Admin' : 'Viewer'
+      role: isSuperAdmin ? 'Super Admin' : 'Member'
     };
 
     // On live static host (GitHub Pages, Vercel, phone), perform smooth instant login
@@ -81,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('token', mockToken);
       localStorage.setItem('user', JSON.stringify(fallbackUser));
       setUser(fallbackUser);
-      return;
+      return fallbackUser;
     }
 
     try {
@@ -90,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(loggedUser));
       setUser(loggedUser);
-      return;
+      return loggedUser;
     } catch (err: any) {
       if (err.response && err.response.data && err.response.data.message && err.response.status === 400) {
         throw err;
@@ -100,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('token', mockToken);
       localStorage.setItem('user', JSON.stringify(fallbackUser));
       setUser(fallbackUser);
-      return;
+      return fallbackUser;
     }
   };
 
