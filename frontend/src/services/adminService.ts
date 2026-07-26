@@ -484,18 +484,6 @@ export interface PaymentsResponse {
   };
 }
 
-export const uploadPaymentReceipt = async (formData: FormData): Promise<{ success: boolean; message: string; paymentId: number; transactionRef: string }> => {
-  if (isLiveStaticHost()) return { success: true, message: 'Payment receipt uploaded successfully.', paymentId: 301, transactionRef: 'TXN-998877' };
-  try {
-    const response = await api.post('/payments/upload-receipt', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    return response.data;
-  } catch (e) {
-    return { success: true, message: 'Payment receipt uploaded successfully.', paymentId: 301, transactionRef: 'TXN-998877' };
-  }
-};
-
 const mockPayments: PaymentData[] = [
   {
     id: 301,
@@ -523,7 +511,7 @@ const mockPayments: PaymentData[] = [
 ];
 
 // Payments LocalStorage Persistence Helpers
-const getStoredPayments = (): PaymentData[] => {
+export const getStoredPayments = (): PaymentData[] => {
   const saved = localStorage.getItem('pce_payments');
   if (saved !== null) {
     try { return JSON.parse(saved); } catch (e) {}
@@ -532,8 +520,66 @@ const getStoredPayments = (): PaymentData[] => {
   return mockPayments;
 };
 
-const setStoredPayments = (list: PaymentData[]) => {
+export const setStoredPayments = (list: PaymentData[]) => {
   localStorage.setItem('pce_payments', JSON.stringify(list));
+};
+
+export const uploadPaymentReceipt = async (formData: FormData): Promise<{ success: boolean; message: string; paymentId: number; transactionRef: string }> => {
+  const transactionRef = (formData.get('transaction_ref') as string) || (formData.get('transaction_id') as string) || ('TXN-' + Math.floor(10000000 + Math.random() * 90000000));
+  const applicantName = (formData.get('applicant_name') as string) || (formData.get('payer_name') as string) || 'Chamber Member / Applicant';
+  const email = (formData.get('email') as string) || (formData.get('applicant_email') as string) || 'member@gmail.com';
+  const amountPaid = Number(formData.get('amount_paid')) || Number(formData.get('amount')) || 7000;
+  const challanNo = (formData.get('challan_number') as string) || (formData.get('challan_no') as string) || ('CHN-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000));
+
+  const newPayment: PaymentData = {
+    id: Date.now(),
+    challan_id: Date.now(),
+    payment_method: (formData.get('payment_method') as any) || (formData.get('payment_mode') as any) || 'Bank Transfer',
+    transaction_ref: transactionRef,
+    receipt_document_id: Date.now(),
+    amount_paid: amountPaid,
+    payment_date: new Date().toISOString().split('T')[0],
+    verification_status: 'Submitted',
+    verified_by: null,
+    verified_at: null,
+    rejection_reason: null,
+    created_at: new Date().toISOString(),
+    challan_number: challanNo,
+    challan_total_amount: amountPaid,
+    challan_due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    receipt_file_path: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&q=80',
+    receipt_file_name: 'receipt.png',
+    receipt_mime_type: 'image/png',
+    applicant_name: applicantName,
+    applicant_email: email,
+    email: email
+  };
+
+  const currentPayments = getStoredPayments();
+  currentPayments.unshift(newPayment);
+  setStoredPayments(currentPayments);
+
+  if (isLiveStaticHost()) {
+    return {
+      success: true,
+      message: 'Payment receipt uploaded successfully and submitted to Admin Queue.',
+      paymentId: newPayment.id,
+      transactionRef
+    };
+  }
+  try {
+    const response = await api.post('/payments/upload-receipt', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  } catch (e) {
+    return {
+      success: true,
+      message: 'Payment receipt uploaded successfully and submitted to Admin Queue.',
+      paymentId: newPayment.id,
+      transactionRef
+    };
+  }
 };
 
 export const getPaymentQueue = async (params: {

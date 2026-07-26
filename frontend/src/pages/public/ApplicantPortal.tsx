@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { trackApplication, ApplicationTrackResponse } from '../../services/applicationService';
+import { getStoredPayments, setStoredPayments, PaymentData } from '../../services/adminService';
 import { printChallanHTML } from '../../utils/challanPrintHelper';
 
 export const ApplicantPortal: React.FC = () => {
@@ -46,28 +47,32 @@ export const ApplicantPortal: React.FC = () => {
 
     setIsSubmittingPayment(true);
     setTimeout(() => {
-      const savedPayments = localStorage.getItem('pce_payments');
-      const list = savedPayments ? JSON.parse(savedPayments) : [];
-      const newPayment = {
+      const currentPayments = getStoredPayments();
+      const newPayment: PaymentData = {
         id: Date.now(),
-        payment_no: 'PAY-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000),
-        application_id: 100,
-        member_id: null,
-        applicant_name: appData.applicantName,
-        applicant_email: appData.email || 'applicant@gmail.com',
-        challan_no: 'CHN-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000),
-        amount: 7000,
-        payment_mode: paymentMode,
-        transaction_id: trxId.trim(),
+        challan_id: Date.now(),
+        payment_method: paymentMode as any,
+        transaction_ref: trxId.trim(),
+        receipt_document_id: Date.now(),
+        amount_paid: 7000,
         payment_date: new Date().toISOString().split('T')[0],
-        receipt_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&q=80',
         verification_status: 'Submitted',
         verified_by: null,
         verified_at: null,
-        notes: 'Payment receipt uploaded via Public Portal.'
+        rejection_reason: null,
+        created_at: new Date().toISOString(),
+        challan_number: 'CHN-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000),
+        challan_total_amount: 7000,
+        challan_due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        receipt_file_path: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&q=80',
+        receipt_file_name: 'receipt.png',
+        receipt_mime_type: 'image/png',
+        applicant_name: appData.applicantName,
+        applicant_email: appData.email || 'applicant@gmail.com',
+        email: appData.email || 'applicant@gmail.com'
       };
-      list.unshift(newPayment);
-      localStorage.setItem('pce_payments', JSON.stringify(list));
+      currentPayments.unshift(newPayment);
+      setStoredPayments(currentPayments);
 
       setIsSubmittingPayment(false);
       setShowPaymentModal(false);
