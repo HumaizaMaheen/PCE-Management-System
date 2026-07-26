@@ -57,15 +57,15 @@ export const Home: React.FC = () => {
               <span className="text-[#DCC37E]">Elevating Education.</span>
             </h1>
             <p className="text-white/80 text-sm sm:text-base max-w-xl font-inter leading-relaxed">
-              [PLACEHOLDER TEXT] The Pakistan Chamber of Education (PCE) is the apex regulatory body representing private and public academic entities in the Bahawalpur Division. We strive to advocate for policy reforms, deliver educator training workshops, and facilitate institutional governance.
+              The Pakistan Chamber of Education (PCE) is the premier regulatory and advocacy body representing private and public academic institutions across the Bahawalpur Division. We empower school leaders, facilitate institutional governance, and deliver professional development.
             </p>
             <div className="flex flex-wrap gap-4 pt-4">
-              <button 
-                onClick={() => alert("Membership Application system is arriving in Phase 3!")}
-                className="bg-accent hover:bg-accent-dark text-white font-poppins font-medium text-xs px-6 py-3 rounded-lg shadow-md transition duration-200"
+              <Link 
+                to="/apply"
+                className="bg-accent hover:bg-accent-dark text-white font-poppins font-medium text-xs px-6 py-3 rounded-lg shadow-md transition duration-200 inline-block text-center"
               >
-                Apply for Membership
-              </button>
+                Become a Member Now
+              </Link>
               <Link 
                 to="/about"
                 className="bg-white/10 hover:bg-white/15 border border-white/20 hover:border-white/30 text-white font-poppins font-medium text-xs px-6 py-3 rounded-lg transition duration-200"

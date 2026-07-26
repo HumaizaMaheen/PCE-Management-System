@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export const Benefits: React.FC = () => {
   return (
@@ -16,7 +17,7 @@ export const Benefits: React.FC = () => {
       {/* Intro */}
       <div className="bg-white border border-gray-100 p-8 rounded-card shadow-sm text-center">
         <p className="text-gray-500 text-sm leading-relaxed">
-          [PLACEHOLDER TEXT] Affiliation with the Pakistan Chamber of Education grants your academic institution official accreditation, policy support, and structural tools to excel. We support school administrators, early childhood institutes, and private academies throughout the Bahawalpur Division.
+          Affiliation with the Pakistan Chamber of Education grants your academic institution official accreditation, policy support, and structural tools to excel. We support school administrators, early childhood institutes, and private academies throughout the Bahawalpur Division.
         </p>
       </div>
 
@@ -28,7 +29,7 @@ export const Benefits: React.FC = () => {
             <h2 className="text-base font-bold font-poppins text-primary">1. Policy Representation & Advocacy</h2>
           </div>
           <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-            [PLACEHOLDER TEXT] Chamber officers actively lobby on behalf of private educational institutes in meetings with BISE boards, the Punjab Education Foundation (PEF), and provincial ministries. We advocate for rationalized taxes, simplified registration renewals, and progressive zoning regulations.
+            Chamber officers actively lobby on behalf of private educational institutes in meetings with BISE boards, the Punjab Education Foundation (PEF), and provincial ministries. We advocate for rationalized taxes, simplified registration renewals, and progressive zoning regulations.
           </p>
         </div>
 
@@ -38,7 +39,7 @@ export const Benefits: React.FC = () => {
             <h2 className="text-base font-bold font-poppins text-accent">2. Professional Educator Training</h2>
           </div>
           <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-            [PLACEHOLDER TEXT] Members receive priority reservations and discounted entry for their faculty in PCE-organized Teacher Training Workshops. Topics cover digital teaching tools, modern STEM education, children mental wellness, and syllabus alignments.
+            Members receive priority reservations and discounted entry for their faculty in PCE-organized Teacher Training Workshops. Topics cover digital teaching tools, modern STEM education, children mental wellness, and syllabus alignments.
           </p>
         </div>
 
@@ -48,7 +49,7 @@ export const Benefits: React.FC = () => {
             <h2 className="text-base font-bold font-poppins text-success">3. Administrative Resource Vault</h2>
           </div>
           <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-            [PLACEHOLDER TEXT] Access templates and legal boilerplate structures for your daily operations. This includes teacher employment contracts, school bylaws, parent-teacher association structures, fee registers, and standardized school health policies.
+            Access templates and legal boilerplate structures for your daily operations. This includes teacher employment contracts, school bylaws, parent-teacher association structures, fee registers, and standardized school health policies.
           </p>
         </div>
 
@@ -58,7 +59,7 @@ export const Benefits: React.FC = () => {
             <h2 className="text-base font-bold font-poppins text-danger">4. Legal & Compliance Help Desk</h2>
           </div>
           <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
-            [PLACEHOLDER TEXT] Free primary consultation with the Chamber's legal panel to resolve property disputes, labor disagreements, BISE compliance warnings, or taxation questions.
+            Free primary consultation with the Chamber's legal panel to resolve property disputes, labor disagreements, BISE compliance warnings, or taxation questions.
           </p>
         </div>
       </div>
@@ -68,15 +69,15 @@ export const Benefits: React.FC = () => {
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
         <h2 className="text-xl font-bold font-poppins text-accent">Membership Dues Details</h2>
         <p className="text-white/80 text-xs max-w-xl mx-auto leading-relaxed">
-          [PLACEHOLDER TEXT] Affiliation is open to all schools and colleges. To maintain Chamber operations, legal panels, and support secretariats, members contribute standard monthly dues of **PKR 2,000** (subject to configuration in settings).
+          Affiliation is open to all schools and colleges. To maintain Chamber operations, legal panels, and support secretariats, members contribute standard monthly dues of PKR 2,000 (subject to configuration in settings).
         </p>
         <div className="pt-2">
-          <button 
-            onClick={() => alert("Membership Application system is arriving in Phase 3!")}
-            className="bg-accent hover:bg-accent-dark text-white font-poppins font-medium text-xs px-6 py-3 rounded-lg shadow-md transition"
+          <Link 
+            to="/apply"
+            className="bg-accent hover:bg-accent-dark text-white font-poppins font-medium text-xs px-6 py-3 rounded-lg shadow-md transition inline-block text-center"
           >
-            Submit Affiliation Form
-          </button>
+            Become a Member Now
+          </Link>
         </div>
       </div>
     </div>
