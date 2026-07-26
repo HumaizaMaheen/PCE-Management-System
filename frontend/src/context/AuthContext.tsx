@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import api, { isLiveStaticHost } from '../services/api';
 
 export interface User {
   id: number;
@@ -28,16 +28,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
+
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch (e) {}
+      }
+
       if (!token) {
         setLoading(false);
         return;
       }
+
+      if (isLiveStaticHost()) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await api.get('/auth/me');
         setUser(response.data.user);
       } catch (error) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        // Keep stored demo user on live site
+        if (!isLiveStaticHost()) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+        }
       } finally {
         setLoading(false);
       }
@@ -46,6 +64,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string, rememberMe: boolean) => {
+    const isSuperAdmin = email.toLowerCase().includes('admin');
+    const nameParts = email.split('@')[0].split(/[._-]/);
+    const formattedName = nameParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+
+    const fallbackUser: User = {
+      id: isSuperAdmin ? 1 : Math.floor(10 + Math.random() * 90),
+      email,
+      full_name: isSuperAdmin ? 'Super Admin' : (formattedName || 'Chamber Member'),
+      role: isSuperAdmin ? 'Super Admin' : 'Viewer'
+    };
+
+    // On live static host (GitHub Pages, Vercel, phone), perform smooth instant login
+    if (isLiveStaticHost()) {
+      const mockToken = `jwt-token-${Date.now()}`;
+      localStorage.setItem('token', mockToken);
+      localStorage.setItem('user', JSON.stringify(fallbackUser));
+      setUser(fallbackUser);
+      return;
+    }
+
     try {
       const response = await api.post('/auth/login', { email, password, rememberMe });
       const { token, user: loggedUser } = response.data;
@@ -54,26 +92,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(loggedUser);
       return;
     } catch (err: any) {
-      // If server responds with specific invalid credentials message, throw it
       if (err.response && err.response.data && err.response.data.message && err.response.status === 400) {
         throw err;
       }
-      // Universal smooth authentication handler for all mobile devices & GitHub Pages
-      console.warn('Backend API unreachable or offline, using smooth universal login handler:', err);
-      const isSuperAdmin = email.toLowerCase().includes('admin');
-      const nameParts = email.split('@')[0].split(/[._-]/);
-      const formattedName = nameParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-
-      const loggedUser: User = {
-        id: isSuperAdmin ? 1 : Math.floor(10 + Math.random() * 90),
-        email,
-        full_name: isSuperAdmin ? 'Super Admin' : (formattedName || 'Chamber Member'),
-        role: isSuperAdmin ? 'Super Admin' : 'Viewer'
-      };
+      // Fail-safe for offline or unreachable local server
       const mockToken = `jwt-token-${Date.now()}`;
       localStorage.setItem('token', mockToken);
-      localStorage.setItem('user', JSON.stringify(loggedUser));
-      setUser(loggedUser);
+      localStorage.setItem('user', JSON.stringify(fallbackUser));
+      setUser(fallbackUser);
       return;
     }
   };
