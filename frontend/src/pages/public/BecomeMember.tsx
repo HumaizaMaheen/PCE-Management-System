@@ -428,7 +428,20 @@ export const BecomeMember: React.FC = () => {
                       <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Date of Birth *</label>
                       <input 
                         type="date" 
-                        {...register('dob', { required: 'Date of birth is required' })}
+                        min="1940-01-01"
+                        max={new Date().toISOString().slice(0, 10)}
+                        {...register('dob', { 
+                          required: 'Date of birth is required',
+                          validate: (val) => {
+                            if (!val) return 'Date of birth is required';
+                            const year = new Date(val).getFullYear();
+                            const currentYear = new Date().getFullYear();
+                            if (isNaN(year) || year < 1940 || year > currentYear) {
+                              return `Please enter a valid 4-digit birth year (between 1940 and ${currentYear})`;
+                            }
+                            return true;
+                          }
+                        })}
                         className={`w-full p-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 ${
                           errors.dob ? 'border-danger focus:ring-danger/25' : 'border-gray-200 focus:ring-primary/25'
                         }`}
@@ -546,11 +559,22 @@ export const BecomeMember: React.FC = () => {
                       <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Passing Year *</label>
                       <input 
                         type="number" 
+                        onInput={(e: React.FormEvent<HTMLInputElement>) => {
+                          if (e.currentTarget.value.length > 4) {
+                            e.currentTarget.value = e.currentTarget.value.slice(0, 4);
+                          }
+                        }}
                         {...register('passing_year', { 
                           required: 'Passing year is required',
                           valueAsNumber: true,
-                          min: { value: 1950, message: 'Year must be greater than 1950' },
-                          max: { value: new Date().getFullYear() + 1, message: 'Invalid year' }
+                          min: { value: 1950, message: 'Year must be 1950 or later' },
+                          max: { value: new Date().getFullYear() + 1, message: 'Invalid 4-digit year' },
+                          validate: (val) => {
+                            if (val && String(val).length !== 4) {
+                              return 'Passing year must be a valid 4-digit year (e.g. 2022)';
+                            }
+                            return true;
+                          }
                         })}
                         className={`w-full p-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 ${
                           errors.passing_year ? 'border-danger focus:ring-danger/25' : 'border-gray-200 focus:ring-primary/25'
