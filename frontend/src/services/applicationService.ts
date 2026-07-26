@@ -1,4 +1,4 @@
-import api from './api';
+import api, { isLiveStaticHost } from './api';
 
 export interface ApplicationSubmitResponse {
   success: boolean;
@@ -48,13 +48,48 @@ export const submitApplication = async (formData: FormData): Promise<Application
     }
   }
 
-  if (email.toLowerCase().includes('maheenhumaiza') || email.toLowerCase().includes('admin') || cnic === '31202-5245527-6') {
-    throw {
-      response: {
-        data: {
-          message: 'This Email Address or CNIC is already registered in our system. Please check your existing application status or sign in.'
-        }
-      }
+  const refNum = `PCE-APP-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+  const newApp = {
+    id: Date.now(),
+    full_name: applicantName,
+    father_husband_name: (formData.get('father_husband_name') as string) || '',
+    cnic,
+    dob: (formData.get('dob') as string) || '1995-01-01',
+    gender: (formData.get('gender') as any) || 'Male',
+    mobile_no: (formData.get('mobile_no') as string) || '',
+    whatsapp_no: (formData.get('whatsapp_no') as string) || '',
+    email,
+    qualification: (formData.get('qualification') as string) || 'Master Degree',
+    institute: (formData.get('institute') as string) || 'University of Bahawalpur',
+    passing_year: Number(formData.get('passing_year')) || 2020,
+    occupation_designation: (formData.get('occupation_designation') as string) || 'Principal',
+    organization_school_name: (formData.get('organization_school_name') as string) || 'Private Institute',
+    office_address: (formData.get('office_address') as string) || 'Bahawalpur',
+    residential_address: (formData.get('residential_address') as string) || 'Bahawalpur',
+    district: (formData.get('district') as any) || 'Bahawalpur',
+    tehsil: (formData.get('tehsil') as string) || 'Bahawalpur City',
+    status: 'Pending',
+    officer_remarks: null,
+    reviewed_by: null,
+    reviewed_at: null,
+    created_at: new Date().toISOString(),
+    reference_number: refNum
+  };
+
+  // Always persist newly submitted application to LocalStorage
+  try {
+    const existing = savedApps ? JSON.parse(savedApps) : [];
+    existing.unshift(newApp);
+    localStorage.setItem('pce_applications', JSON.stringify(existing));
+  } catch (e) {}
+
+  if (isLiveStaticHost()) {
+    return {
+      success: true,
+      message: 'Application registered successfully!',
+      referenceNumber: refNum,
+      applicantName,
+      email
     };
   }
 
@@ -69,40 +104,6 @@ export const submitApplication = async (formData: FormData): Promise<Application
     if (err.response && err.response.data && (err.response.data.message || err.response.data.errors)) {
       throw err;
     }
-
-    const refNum = `PCE-APP-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
-    const newApp = {
-      id: Date.now(),
-      full_name: applicantName,
-      father_husband_name: (formData.get('father_husband_name') as string) || '',
-      cnic,
-      dob: (formData.get('dob') as string) || '1995-01-01',
-      gender: (formData.get('gender') as any) || 'Male',
-      mobile_no: (formData.get('mobile_no') as string) || '',
-      whatsapp_no: (formData.get('whatsapp_no') as string) || '',
-      email,
-      qualification: (formData.get('qualification') as string) || 'Master Degree',
-      institute: (formData.get('institute') as string) || 'University of Bahawalpur',
-      passing_year: Number(formData.get('passing_year')) || 2020,
-      occupation_designation: (formData.get('occupation_designation') as string) || 'Principal',
-      organization_school_name: (formData.get('organization_school_name') as string) || 'Private Institute',
-      office_address: (formData.get('office_address') as string) || 'Bahawalpur',
-      residential_address: (formData.get('residential_address') as string) || 'Bahawalpur',
-      district: (formData.get('district') as any) || 'Bahawalpur',
-      tehsil: (formData.get('tehsil') as string) || 'Bahawalpur City',
-      status: 'Pending',
-      officer_remarks: null,
-      reviewed_by: null,
-      reviewed_at: null,
-      created_at: new Date().toISOString(),
-      reference_number: refNum
-    };
-
-    // Save to LocalStorage
-    const existing = savedApps ? JSON.parse(savedApps) : [];
-    existing.unshift(newApp);
-    localStorage.setItem('pce_applications', JSON.stringify(existing));
-
     return {
       success: true,
       message: 'Application registered successfully!',
