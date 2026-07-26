@@ -16,14 +16,14 @@ export const AdminLayout: React.FC = () => {
     { name: 'Dashboard Overview', icon: 'dashboard', path: '/admin/dashboard', roles: ['Super Admin', 'Finance Officer', 'Membership Officer', 'Viewer'] },
     { name: 'Membership Applications', icon: 'assignment', path: '/admin/applications', roles: ['Super Admin', 'Membership Officer', 'Viewer'] },
     { name: 'Members Directory', icon: 'people', path: '/admin/members', roles: ['Super Admin', 'Finance Officer', 'Membership Officer', 'Viewer'] },
-    { name: 'Document Vault', icon: 'folder', path: '/admin/documents', roles: ['Super Admin', 'Membership Officer'] },
-    { name: 'Dues & Contributions', icon: 'account_balance_wallet', path: '/admin/dues', roles: ['Super Admin', 'Finance Officer'] },
-    { name: 'Challan Management', icon: 'receipt', path: '/admin/challans', roles: ['Super Admin', 'Finance Officer'] },
-    { name: 'Payments & Receipts', icon: 'payments', path: '/admin/payments', roles: ['Super Admin', 'Finance Officer'] },
-    { name: 'General Ledger Accounting', icon: 'analytics', path: '/admin/accounting', roles: ['Super Admin', 'Finance Officer'] },
+    { name: 'Document Vault', icon: 'folder', path: '/admin/documents', roles: ['Super Admin', 'Membership Officer', 'Viewer'] },
+    { name: 'Dues & Contributions', icon: 'account_balance_wallet', path: '/admin/dues', roles: ['Super Admin', 'Finance Officer', 'Viewer'] },
+    { name: 'Challan Management', icon: 'receipt', path: '/admin/challans', roles: ['Super Admin', 'Finance Officer', 'Viewer'] },
+    { name: 'Payments & Receipts', icon: 'payments', path: '/admin/payments', roles: ['Super Admin', 'Finance Officer', 'Viewer'] },
+    { name: 'General Ledger Accounting', icon: 'analytics', path: '/admin/accounting', roles: ['Super Admin', 'Finance Officer', 'Viewer'] },
     { name: 'Notification Logs', icon: 'notifications_active', path: '/admin/notifications', roles: ['Super Admin', 'Viewer'] },
-    { name: 'System Audit Logs', icon: 'history', path: '/admin/audit-logs', roles: ['Super Admin'] },
-    { name: 'System Settings', icon: 'settings', path: '/admin/settings', roles: ['Super Admin'] },
+    { name: 'System Audit Logs', icon: 'history', path: '/admin/audit-logs', roles: ['Super Admin', 'Viewer'] },
+    { name: 'System Settings', icon: 'settings', path: '/admin/settings', roles: ['Super Admin', 'Viewer'] },
   ];
 
   const handleLogout = async () => {
