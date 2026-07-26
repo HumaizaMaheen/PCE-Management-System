@@ -53,13 +53,15 @@ export default function Applications() {
       }
 
       const res = await getApplications(params);
-      if (res.success) {
+      if (res && res.success && Array.isArray(res.data)) {
         setApplications(res.data);
-        setTotalCount(res.pagination.total);
-        setTotalPages(res.pagination.totalPages);
+        setTotalCount(res.pagination?.total ?? res.data.length);
+        setTotalPages(res.pagination?.totalPages ?? 1);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to load applications');
+      if (!err.message?.includes('403')) {
+        setError(err.response?.data?.message || err.message || 'Failed to load applications');
+      }
     } finally {
       setLoading(false);
     }
