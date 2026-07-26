@@ -237,19 +237,42 @@ export const reviewApplication = async (id: number, payload: ReviewApplicationPa
 
 export const deleteApplication = async (id: number): Promise<{ success: boolean; message: string }> => {
   const currentApps = getStoredApplications();
-  const updated = currentApps.filter(a => a.id !== id);
-  setStoredApplications(updated);
+  const targetApp = currentApps.find(a => a.id === id);
+  const updatedApps = currentApps.filter(a => a.id !== id);
+  setStoredApplications(updatedApps);
+
+  if (targetApp) {
+    const targetCnic = targetApp.cnic;
+    const targetEmail = targetApp.email?.toLowerCase();
+
+    // 1. Purge matching Members from LocalStorage if any
+    const currentMembers = getStoredMembers();
+    const updatedMembers = currentMembers.filter(m => 
+      m.cnic !== targetCnic && 
+      m.email?.toLowerCase() !== targetEmail && 
+      m.application_id !== id
+    );
+    setStoredMembers(updatedMembers);
+
+    // 2. Purge matching Payments from LocalStorage
+    const currentPayments = getStoredPayments();
+    const updatedPayments = currentPayments.filter(p => 
+      p.applicant_email?.toLowerCase() !== targetEmail &&
+      p.email?.toLowerCase() !== targetEmail
+    );
+    setStoredPayments(updatedPayments);
+  }
 
   const idx = mockApplications.findIndex(a => a.id === id);
   if (idx !== -1) {
     mockApplications.splice(idx, 1);
   }
-  if (isLiveStaticHost()) return { success: true, message: 'Application deleted successfully.' };
+  if (isLiveStaticHost()) return { success: true, message: 'Application and associated CNIC records deleted successfully.' };
   try {
     const response = await api.delete<{ success: boolean; message: string }>(`/applications/${id}`);
     return response.data;
   } catch (e) {
-    return { success: true, message: 'Application deleted successfully.' };
+    return { success: true, message: 'Application and associated CNIC records deleted successfully.' };
   }
 };
 
@@ -677,19 +700,42 @@ export const updateMemberStatus = async (
 
 export const deleteMember = async (id: number): Promise<{ success: boolean; message: string }> => {
   const currentMembers = getStoredMembers();
-  const updated = currentMembers.filter(m => m.id !== id);
-  setStoredMembers(updated);
+  const targetMember = currentMembers.find(m => m.id === id);
+  const updatedMembers = currentMembers.filter(m => m.id !== id);
+  setStoredMembers(updatedMembers);
+
+  if (targetMember) {
+    const targetCnic = targetMember.cnic;
+    const targetEmail = targetMember.email?.toLowerCase();
+
+    // 1. Purge matching Applications from LocalStorage
+    const currentApps = getStoredApplications();
+    const updatedApps = currentApps.filter(a => 
+      a.cnic !== targetCnic && 
+      a.email?.toLowerCase() !== targetEmail && 
+      a.id !== targetMember.application_id
+    );
+    setStoredApplications(updatedApps);
+
+    // 2. Purge matching Payments from LocalStorage
+    const currentPayments = getStoredPayments();
+    const updatedPayments = currentPayments.filter(p => 
+      p.applicant_email?.toLowerCase() !== targetEmail &&
+      p.email?.toLowerCase() !== targetEmail
+    );
+    setStoredPayments(updatedPayments);
+  }
 
   const idx = mockMembers.findIndex(m => m.id === id);
   if (idx !== -1) {
     mockMembers.splice(idx, 1);
   }
-  if (isLiveStaticHost()) return { success: true, message: 'Member and all associated credentials purged successfully.' };
+  if (isLiveStaticHost()) return { success: true, message: 'Member and all associated CNIC records & credentials purged successfully.' };
   try {
     const response = await api.delete<{ success: boolean; message: string }>(`/members/${id}`);
     return response.data;
   } catch (e) {
-    return { success: true, message: 'Member and all associated credentials purged successfully.' };
+    return { success: true, message: 'Member and all associated CNIC records & credentials purged successfully.' };
   }
 };
 

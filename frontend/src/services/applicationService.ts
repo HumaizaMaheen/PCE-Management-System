@@ -28,24 +28,24 @@ export const submitApplication = async (formData: FormData): Promise<Application
   const email = (formData.get('email') as string) || '';
   const cnic = (formData.get('cnic') as string) || '';
 
-  // Check duplicate testing credentials against LocalStorage
+  // Check duplicate credentials against active Applications & Members in LocalStorage
   const savedApps = localStorage.getItem('pce_applications');
-  if (savedApps) {
-    try {
-      const appsList: any[] = JSON.parse(savedApps);
-      const isDuplicate = appsList.some(a => a.email?.toLowerCase() === email.toLowerCase() || a.cnic === cnic);
-      if (isDuplicate) {
-        throw {
-          response: {
-            data: {
-              message: 'This Email Address or CNIC is already registered in our system. Please check your existing application status or sign in.'
-            }
-          }
-        };
+  const savedMembers = localStorage.getItem('pce_members');
+  
+  let appsList: any[] = savedApps ? JSON.parse(savedApps) : [];
+  let membersList: any[] = savedMembers ? JSON.parse(savedMembers) : [];
+
+  const isDuplicateApp = appsList.some(a => a.email?.toLowerCase() === email.toLowerCase() || a.cnic === cnic);
+  const isDuplicateMember = membersList.some(m => m.email?.toLowerCase() === email.toLowerCase() || m.cnic === cnic);
+
+  if (isDuplicateApp || isDuplicateMember) {
+    throw {
+      response: {
+        data: {
+          message: 'This Email Address or CNIC is already registered in our active system records. Please check your existing application status or sign in.'
+        }
       }
-    } catch (e: any) {
-      if (e?.response) throw e;
-    }
+    };
   }
 
   const refNum = `PCE-APP-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
