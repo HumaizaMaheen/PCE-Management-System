@@ -1,4 +1,5 @@
 import api, { isLiveStaticHost } from './api';
+import { removePurgedKey } from './adminService';
 
 export interface ApplicationSubmitResponse {
   success: boolean;
@@ -86,6 +87,10 @@ export const submitApplication = async (formData: FormData): Promise<Application
 
   // Always persist newly submitted application to LocalStorage
   try {
+    removePurgedKey(rawCnic);
+    removePurgedKey(cnicDigits);
+    if (email) removePurgedKey(email);
+
     const existing = savedApps ? JSON.parse(savedApps) : [];
     existing.unshift(newApp);
     localStorage.setItem('pce_applications', JSON.stringify(existing));

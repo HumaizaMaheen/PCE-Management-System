@@ -132,13 +132,49 @@ const mockKPIs: DashboardKPIs = {
 };
 
 // LocalStorage Persistence Helpers
+const getPurgedKeys = (): string[] => {
+  const saved = localStorage.getItem('pce_purged_keys');
+  if (saved !== null) {
+    try { return JSON.parse(saved); } catch (e) {}
+  }
+  return [];
+};
+
+export const addPurgedKey = (key?: string | null) => {
+  if (!key) return;
+  const list = getPurgedKeys();
+  const norm = key.toLowerCase().trim();
+  const digits = norm.replace(/[^0-9]/g, '');
+  if (norm && !list.includes(norm)) list.push(norm);
+  if (digits && !list.includes(digits)) list.push(digits);
+  localStorage.setItem('pce_purged_keys', JSON.stringify(list));
+};
+
+export const removePurgedKey = (key?: string | null) => {
+  if (!key) return;
+  const list = getPurgedKeys();
+  const norm = key.toLowerCase().trim();
+  const digits = norm.replace(/[^0-9]/g, '');
+  const updated = list.filter(k => k !== norm && (digits === '' || k !== digits));
+  localStorage.setItem('pce_purged_keys', JSON.stringify(updated));
+};
+
+const isPurgedKey = (key?: string | null): boolean => {
+  if (!key) return false;
+  const list = getPurgedKeys();
+  const norm = key.toLowerCase().trim();
+  const digits = norm.replace(/[^0-9]/g, '');
+  return list.some(k => k === norm || (digits !== '' && k === digits));
+};
+
 const getStoredApplications = (): ApplicationData[] => {
   const saved = localStorage.getItem('pce_applications');
   if (saved !== null) {
     try { return JSON.parse(saved); } catch (e) {}
   }
-  localStorage.setItem('pce_applications', JSON.stringify(mockApplications));
-  return mockApplications;
+  const filteredMock = mockApplications.filter(a => !isPurgedKey(a.cnic) && !isPurgedKey(a.email));
+  localStorage.setItem('pce_applications', JSON.stringify(filteredMock));
+  return filteredMock;
 };
 
 const setStoredApplications = (list: ApplicationData[]) => {
@@ -246,6 +282,10 @@ export const deleteApplication = async (id: number): Promise<{ success: boolean;
   if (targetApp) {
     const targetCnicDigits = cleanStr(targetApp.cnic);
     const targetEmail = targetApp.email?.toLowerCase().trim();
+
+    addPurgedKey(targetApp.cnic);
+    addPurgedKey(targetCnicDigits);
+    if (targetEmail) addPurgedKey(targetEmail);
 
     // 1. Purge matching Members from LocalStorage if any
     const currentMembers = getStoredMembers();
@@ -625,8 +665,9 @@ const getStoredMembers = (): MemberData[] => {
   if (saved !== null) {
     try { return JSON.parse(saved); } catch (e) {}
   }
-  localStorage.setItem('pce_members', JSON.stringify(mockMembers));
-  return mockMembers;
+  const filteredMock = mockMembers.filter(m => !isPurgedKey(m.cnic) && !isPurgedKey(m.email));
+  localStorage.setItem('pce_members', JSON.stringify(filteredMock));
+  return filteredMock;
 };
 
 const setStoredMembers = (list: MemberData[]) => {
@@ -708,6 +749,10 @@ export const deleteMember = async (id: number): Promise<{ success: boolean; mess
   if (targetMember) {
     const targetCnicDigits = cleanStr(targetMember.cnic);
     const targetEmail = targetMember.email?.toLowerCase().trim();
+
+    addPurgedKey(targetMember.cnic);
+    addPurgedKey(targetCnicDigits);
+    if (targetEmail) addPurgedKey(targetEmail);
 
     // 1. Purge matching Applications from LocalStorage
     const currentApps = getStoredApplications();
