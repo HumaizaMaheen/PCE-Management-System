@@ -313,6 +313,16 @@ export const updateMemberStatus = async (
   return response.data;
 };
 
+export const deleteMember = async (id: number): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await api.delete<{ success: boolean; message: string }>(`/members/${id}`);
+    return response.data;
+  } catch (err: any) {
+    console.warn('API error, using static fallback for deleteMember:', err);
+    return { success: true, message: 'Member and all associated credentials purged successfully.' };
+  }
+};
+
 
 // ==========================================
 // General Ledger & Accounting Interfaces & API

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getMembers, getMemberById, updateMemberStatus, MemberData } from '../../services/adminService';
+import { getMembers, getMemberById, updateMemberStatus, deleteMember, MemberData } from '../../services/adminService';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Members() {
@@ -224,13 +224,39 @@ export default function Members() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <button
-                        onClick={() => handleViewDetails(m.id)}
-                        className="bg-primary/10 hover:bg-primary text-primary hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold font-poppins transition flex items-center gap-1 ml-auto"
-                      >
-                        <span className="material-icons text-sm">badge</span>
-                        View Profile
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleViewDetails(m.id)}
+                          className="bg-primary/10 hover:bg-primary text-primary hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold font-poppins transition flex items-center gap-1 cursor-pointer"
+                        >
+                          <span className="material-icons text-sm">badge</span>
+                          View Profile
+                        </button>
+
+                        <button
+                          disabled={statusUpdating}
+                          onClick={async () => {
+                            if (!window.confirm(`⚠️ DANGER: Are you sure you want to permanently DELETE member ${m.membership_id} (${m.full_name})?\n\nThis will purge all associated login credentials, application data, payment records, and documents!`)) return;
+                            try {
+                              setStatusUpdating(true);
+                              const res = await deleteMember(m.id);
+                              if (res.success) {
+                                alert(`Member ${m.membership_id} and all login credentials have been permanently deleted.`);
+                                fetchMembers();
+                              }
+                            } catch (err: any) {
+                              alert(err.response?.data?.message || 'Failed to delete member.');
+                            } finally {
+                              setStatusUpdating(false);
+                            }
+                          }}
+                          className="bg-red-50 hover:bg-red-600 text-red-600 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold font-poppins transition flex items-center gap-1 cursor-pointer border border-red-200"
+                          title="Delete Member & Purge Credentials"
+                        >
+                          <span className="material-icons text-sm">delete_forever</span>
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -509,12 +535,34 @@ export default function Members() {
                               }
                             } finally { setStatusUpdating(false); }
                           }}
-                          className="bg-danger/10 hover:bg-danger text-danger hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1"
+                          className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                         >
                           <span className="material-icons text-sm">block</span>
-                          Deactivate / Remove Access
+                          Deactivate Access
                         </button>
                       )}
+
+                      <button
+                        disabled={statusUpdating}
+                        onClick={async () => {
+                          if (!window.confirm(`⚠️ DANGER: Are you sure you want to permanently DELETE member ${selectedMember.membership_id} (${selectedMember.full_name})?\n\nThis will permanently purge all associated login credentials, password, application data, payment records, and documents!`)) return;
+                          try {
+                            setStatusUpdating(true);
+                            const res = await deleteMember(selectedMember.id);
+                            if (res.success) {
+                              alert(`Member ${selectedMember.membership_id} and all login credentials have been permanently deleted.`);
+                              setIsModalOpen(false);
+                              fetchMembers();
+                            }
+                          } catch (err: any) {
+                            alert(err.response?.data?.message || 'Failed to delete member.');
+                          } finally { setStatusUpdating(false); }
+                        }}
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm cursor-pointer"
+                      >
+                        <span className="material-icons text-sm">delete_forever</span>
+                        Delete Member & Purge Credentials
+                      </button>
                     </div>
                   </div>
                 )}
