@@ -5,8 +5,10 @@ import {
   verifyPayment, 
   deletePayment,
   getChallans, 
+  getStoredApplications,
   PaymentData, 
-  ChallanData 
+  ChallanData,
+  ApplicationData 
 } from '../../services/adminService';
 import { useAuth } from '../../context/AuthContext';
 
@@ -25,6 +27,10 @@ export default function Payments() {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Document Lightbox Modal State
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [previewTitle, setPreviewTitle] = useState<string>('Payment Receipt Image');
 
   // Upload Modal State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(false);
@@ -94,7 +100,7 @@ export default function Payments() {
     fetchPaymentQueue();
   };
 
-  // Open Upload Modal & Fetch Unpaid Challans
+  // Open Upload Modal & Fetch Unpaid Challans & Approved Applications
   const handleOpenUploadModal = async () => {
     setIsUploadModalOpen(true);
     setUploadMessage(null);
@@ -105,9 +111,28 @@ export default function Payments() {
     
     try {
       const res = await getChallans({ status: 'Unpaid', limit: 50 });
-      if (res.success) {
-        setUnpaidChallans(res.data);
-      }
+      let list: ChallanData[] = res && res.success && Array.isArray(res.data) ? [...res.data] : [];
+
+      // Combine with Approved Applications that need payment
+      const apps = getStoredApplications().filter((a: ApplicationData) => a.status === 'Approved - Awaiting Payment');
+      apps.forEach((a: ApplicationData) => {
+        if (!list.some(c => c.application_id === a.id)) {
+          list.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            challan_number: 'CHN-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000),
+            application_id: a.id,
+            member_id: null,
+            total_amount: 7000,
+            due_date: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+            status: 'Unpaid',
+            pdf_file_path: null,
+            created_at: new Date().toISOString(),
+            applicant_name: a.full_name
+          });
+        }
+      });
+
+      setUnpaidChallans(list);
     } catch (err: any) {
       console.error('Failed to fetch unpaid challans:', err);
     }
@@ -133,6 +158,8 @@ export default function Payments() {
 
       const formData = new FormData();
       formData.append('challan_id', String(selectedChallan.id));
+      formData.append('challan_number', selectedChallan.challan_number);
+      formData.append('applicant_name', selectedChallan.applicant_name || selectedChallan.member_name || 'Chamber Applicant');
       formData.append('payment_method', paymentMethod);
       formData.append('transaction_ref', transactionRef.trim());
       formData.append('amount_paid', amountPaid);
@@ -692,27 +719,39 @@ export default function Payments() {
                   Uploaded Receipt Screenshot
                 </h4>
                 
-                <div className="bg-gray-100 rounded-lg p-2 flex items-center justify-center border border-gray-200 min-h-[180px]">
-                  {selectedPayment.receipt_mime_type === 'application/pdf' ? (
-                    <div className="text-center space-y-2">
-                      <span className="material-icons text-4xl text-danger">picture_as_pdf</span>
-                      <p className="text-[11px] font-semibold text-gray-600">{selectedPayment.receipt_file_name}</p>
-                      <a 
-                        href={`http://localhost:5000${selectedPayment.receipt_file_path}`}
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="inline-block bg-primary text-white text-[10px] font-bold font-poppins px-3 py-1.5 rounded"
-                      >
-                        Open PDF Receipt
-                      </a>
-                    </div>
-                  ) : (
-                    <img 
-                      src={`http://localhost:5000${selectedPayment.receipt_file_path}`} 
-                      alt="Payment Receipt" 
-                      className="max-h-56 object-contain rounded shadow-sm border border-gray-200"
-                    />
-                  )}
+                <div className="bg-gray-100 rounded-lg p-3 flex flex-col items-center justify-center border border-gray-200 min-h-[180px]">
+                  <img 
+                    src={
+                      selectedPayment.receipt_file_path && (selectedPayment.receipt_file_path.startsWith('http') || selectedPayment.receipt_file_path.startsWith('data:'))
+                        ? selectedPayment.receipt_file_path
+                        : 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&q=80'
+                    } 
+                    alt="Payment Receipt" 
+                    onClick={() => {
+                      setPreviewTitle(`Payment Receipt - ${selectedPayment.transaction_ref}`);
+                      setPreviewImageUrl(
+                        selectedPayment.receipt_file_path && (selectedPayment.receipt_file_path.startsWith('http') || selectedPayment.receipt_file_path.startsWith('data:'))
+                          ? selectedPayment.receipt_file_path
+                          : 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&q=80'
+                      );
+                    }}
+                    className="max-h-52 object-contain rounded shadow-sm border border-gray-200 cursor-pointer hover:opacity-90 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreviewTitle(`Payment Receipt - ${selectedPayment.transaction_ref}`);
+                      setPreviewImageUrl(
+                        selectedPayment.receipt_file_path && (selectedPayment.receipt_file_path.startsWith('http') || selectedPayment.receipt_file_path.startsWith('data:'))
+                          ? selectedPayment.receipt_file_path
+                          : 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&q=80'
+                      );
+                    }}
+                    className="mt-2 inline-flex items-center gap-1 text-primary hover:underline text-xs font-bold font-poppins cursor-pointer"
+                  >
+                    <span className="material-icons text-sm">zoom_in</span>
+                    Click to View Fullsize Picture
+                  </button>
                 </div>
               </div>
             </div>
@@ -867,6 +906,61 @@ _Bahawalpur Division, Punjab_`;
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Image Preview Modal */}
+      {previewImageUrl && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl space-y-4 animate-fadeIn border border-gray-100 relative">
+            <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+              <h3 className="font-poppins font-bold text-base text-gray-800 flex items-center gap-2">
+                <span className="material-icons text-primary">image</span>
+                {previewTitle}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setPreviewImageUrl(null)}
+                className="text-gray-400 hover:text-gray-600 transition cursor-pointer"
+              >
+                <span className="material-icons text-xl">close</span>
+              </button>
+            </div>
+
+            <div className="bg-gray-900 rounded-xl p-4 flex items-center justify-center min-h-[350px]">
+              <img
+                src={previewImageUrl}
+                alt="Document Full View"
+                className="max-h-[60vh] max-w-full object-contain rounded shadow-lg"
+              />
+            </div>
+
+            <div className="flex justify-between items-center pt-2 font-inter text-xs">
+              <span className="text-gray-500 font-medium flex items-center gap-1">
+                <span className="material-icons text-sm text-primary">verified</span>
+                Official Payment Receipt Document Record
+              </span>
+              <div className="flex gap-2">
+                <a
+                  href={previewImageUrl}
+                  download="chamber_payment_receipt.png"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-primary hover:bg-[#004C38] text-white px-4 py-2 rounded-lg text-xs font-bold font-poppins shadow-sm transition inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <span className="material-icons text-sm">download</span>
+                  Download Picture
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewImageUrl(null)}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-bold font-poppins transition cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

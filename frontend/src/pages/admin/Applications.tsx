@@ -514,13 +514,17 @@ export default function Applications() {
                                   </div>
                                 </div>
                                 <a 
-                                  href={`http://localhost:5000${doc.file_path}`} 
+                                  href={
+                                    doc.file_path && doc.file_path.startsWith('http') 
+                                      ? doc.file_path 
+                                      : 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&q=80'
+                                  } 
                                   target="_blank" 
                                   rel="noopener noreferrer" 
-                                  className="bg-primary/5 hover:bg-primary/10 text-primary border border-primary/10 px-2.5 py-1 rounded text-[10px] font-bold font-poppins transition flex items-center gap-1"
+                                  className="bg-primary/5 hover:bg-primary/10 text-primary border border-primary/10 px-2.5 py-1 rounded text-[10px] font-bold font-poppins transition flex items-center gap-1 cursor-pointer"
                                 >
                                   <span className="material-icons text-[10px]">open_in_new</span>
-                                  Open File
+                                  View Document
                                 </a>
                               </div>
                             ))

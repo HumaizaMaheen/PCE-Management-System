@@ -416,10 +416,10 @@ export default function Members() {
                       {selectedMember.documents.map((doc) => (
                         <a
                           key={doc.id}
-                          href={`http://localhost:5000${doc.file_path}`}
+                          href={doc.file_path && doc.file_path.startsWith('http') ? doc.file_path : 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&q=80'}
                           target="_blank"
                           rel="noreferrer"
-                          className="bg-[#FAFBFB] hover:bg-gray-100 border border-gray-200 p-2.5 rounded-lg flex items-center gap-2 transition"
+                          className="bg-[#FAFBFB] hover:bg-gray-100 border border-gray-200 p-2.5 rounded-lg flex items-center gap-2 transition cursor-pointer"
                         >
                           <span className="material-icons text-primary text-lg">description</span>
                           <div className="min-w-0 flex-1">

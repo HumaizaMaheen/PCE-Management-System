@@ -167,7 +167,7 @@ const isPurgedKey = (key?: string | null): boolean => {
   return list.some(k => k === norm || (digits !== '' && k === digits));
 };
 
-const getStoredApplications = (): ApplicationData[] => {
+export const getStoredApplications = (): ApplicationData[] => {
   const saved = localStorage.getItem('pce_applications');
   if (saved !== null) {
     try { return JSON.parse(saved); } catch (e) {}
