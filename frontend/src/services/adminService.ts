@@ -131,6 +131,20 @@ const mockKPIs: DashboardKPIs = {
   activeMembers: 1248
 };
 
+// LocalStorage Persistence Helpers
+const getStoredApplications = (): ApplicationData[] => {
+  const saved = localStorage.getItem('pce_applications');
+  if (saved !== null) {
+    try { return JSON.parse(saved); } catch (e) {}
+  }
+  localStorage.setItem('pce_applications', JSON.stringify(mockApplications));
+  return mockApplications;
+};
+
+const setStoredApplications = (list: ApplicationData[]) => {
+  localStorage.setItem('pce_applications', JSON.stringify(list));
+};
+
 /**
  * Fetch Admin Dashboard KPIs
  */
@@ -155,8 +169,9 @@ export const getApplications = async (params: {
   page?: number;
   limit?: number;
 }): Promise<ApplicationsResponse> => {
+  const currentApps = getStoredApplications();
   if (isLiveStaticHost()) {
-    let filtered = [...mockApplications];
+    let filtered = [...currentApps];
     if (params.status && params.status !== 'All') {
       filtered = filtered.filter(a => a.status === params.status);
     }
@@ -172,8 +187,8 @@ export const getApplications = async (params: {
   } catch (e) {
     return {
       success: true,
-      data: mockApplications,
-      pagination: { total: mockApplications.length, page: 1, limit: 20, totalPages: 1 }
+      data: currentApps,
+      pagination: { total: currentApps.length, page: 1, limit: 20, totalPages: 1 }
     };
   }
 };
@@ -182,15 +197,16 @@ export const getApplications = async (params: {
  * Fetch Application Details by ID
  */
 export const getApplicationById = async (id: number): Promise<ApplicationData> => {
+  const currentApps = getStoredApplications();
   if (isLiveStaticHost()) {
-    const found = mockApplications.find(a => a.id === id) || mockApplications[0];
+    const found = currentApps.find(a => a.id === id) || currentApps[0];
     return found;
   }
   try {
     const response = await api.get<{ success: boolean; data: ApplicationData }>(`/applications/${id}`);
     return response.data.data;
   } catch (e) {
-    return mockApplications[0];
+    return currentApps[0] || mockApplications[0];
   }
 };
 
@@ -220,6 +236,10 @@ export const reviewApplication = async (id: number, payload: ReviewApplicationPa
 };
 
 export const deleteApplication = async (id: number): Promise<{ success: boolean; message: string }> => {
+  const currentApps = getStoredApplications();
+  const updated = currentApps.filter(a => a.id !== id);
+  setStoredApplications(updated);
+
   const idx = mockApplications.findIndex(a => a.id === id);
   if (idx !== -1) {
     mockApplications.splice(idx, 1);
@@ -507,6 +527,20 @@ const mockMembers: MemberData[] = [
   }
 ];
 
+// Members LocalStorage Persistence Helpers
+const getStoredMembers = (): MemberData[] => {
+  const saved = localStorage.getItem('pce_members');
+  if (saved !== null) {
+    try { return JSON.parse(saved); } catch (e) {}
+  }
+  localStorage.setItem('pce_members', JSON.stringify(mockMembers));
+  return mockMembers;
+};
+
+const setStoredMembers = (list: MemberData[]) => {
+  localStorage.setItem('pce_members', JSON.stringify(list));
+};
+
 export const getMembers = async (params: {
   status?: string;
   district?: string;
@@ -514,32 +548,43 @@ export const getMembers = async (params: {
   page?: number;
   limit?: number;
 }): Promise<MembersResponse> => {
-  if (isLiveStaticHost()) return { success: true, data: mockMembers, pagination: { total: mockMembers.length, page: 1, limit: 20, totalPages: 1 } };
+  const currentMembers = getStoredMembers();
+  if (isLiveStaticHost()) {
+    let filtered = [...currentMembers];
+    if (params.status && params.status !== 'All') {
+      filtered = filtered.filter(m => m.status === params.status);
+    }
+    return { success: true, data: filtered, pagination: { total: filtered.length, page: 1, limit: 20, totalPages: 1 } };
+  }
   try {
     const response = await api.get<MembersResponse>('/members', { params });
     return response.data;
   } catch (e) {
-    return { success: true, data: mockMembers, pagination: { total: mockMembers.length, page: 1, limit: 20, totalPages: 1 } };
+    return { success: true, data: currentMembers, pagination: { total: currentMembers.length, page: 1, limit: 20, totalPages: 1 } };
   }
 };
 
 export const getMemberById = async (id: number): Promise<MemberData> => {
-  if (isLiveStaticHost()) return mockMembers[0];
+  const currentMembers = getStoredMembers();
+  if (isLiveStaticHost()) {
+    return currentMembers.find(m => m.id === id) || currentMembers[0] || mockMembers[0];
+  }
   try {
     const response = await api.get<{ success: boolean; data: MemberData }>(`/members/${id}`);
     return response.data.data;
   } catch (e) {
-    return mockMembers[0];
+    return currentMembers[0] || mockMembers[0];
   }
 };
 
 export const getMemberMe = async (): Promise<MemberData> => {
-  if (isLiveStaticHost()) return mockMembers[0];
+  const currentMembers = getStoredMembers();
+  if (isLiveStaticHost()) return currentMembers[0] || mockMembers[0];
   try {
     const response = await api.get<{ success: boolean; data: MemberData }>('/members/me');
     return response.data.data;
   } catch (e) {
-    return mockMembers[0];
+    return currentMembers[0] || mockMembers[0];
   }
 };
 
@@ -547,6 +592,12 @@ export const updateMemberStatus = async (
   id: number,
   payload: { status: 'Active' | 'Suspended' | 'Inactive'; reason?: string }
 ): Promise<{ success: boolean; message: string }> => {
+  const currentMembers = getStoredMembers();
+  const target = currentMembers.find(m => m.id === id);
+  if (target) {
+    target.status = payload.status;
+    setStoredMembers(currentMembers);
+  }
   if (isLiveStaticHost()) return { success: true, message: 'Member status updated successfully.' };
   try {
     const response = await api.put<{ success: boolean; message: string }>(`/members/${id}/status`, payload);
@@ -557,6 +608,10 @@ export const updateMemberStatus = async (
 };
 
 export const deleteMember = async (id: number): Promise<{ success: boolean; message: string }> => {
+  const currentMembers = getStoredMembers();
+  const updated = currentMembers.filter(m => m.id !== id);
+  setStoredMembers(updated);
+
   const idx = mockMembers.findIndex(m => m.id === id);
   if (idx !== -1) {
     mockMembers.splice(idx, 1);
