@@ -250,12 +250,45 @@ export const getApplicationById = async (id: number): Promise<ApplicationData> =
  * Submit Officer Review for Application
  */
 export const reviewApplication = async (id: number, payload: ReviewApplicationPayload): Promise<ReviewApplicationResponse> => {
+  const currentApps = getStoredApplications();
+  const targetApp = currentApps.find(a => a.id === id);
+  const challanNo = 'CHN-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000);
+
+  if (targetApp) {
+    targetApp.status = payload.status as any;
+    targetApp.officer_remarks = payload.remarks || null;
+    targetApp.reviewed_at = new Date().toISOString();
+    setStoredApplications(currentApps);
+
+    // If approved awaiting payment, auto-create Dues Challan in LocalStorage
+    if (payload.status === 'Approved - Awaiting Payment') {
+      const currentChallans = getStoredChallans();
+      const existingChallan = currentChallans.find((c: ChallanData) => c.application_id === targetApp.id);
+      if (!existingChallan) {
+        const newChallan: ChallanData = {
+          id: Date.now(),
+          challan_number: challanNo,
+          application_id: targetApp.id,
+          member_id: null,
+          total_amount: 7000,
+          due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: 'Unpaid',
+          pdf_file_path: null,
+          created_at: new Date().toISOString(),
+          applicant_name: targetApp.full_name
+        };
+        currentChallans.unshift(newChallan);
+        setStoredChallans(currentChallans);
+      }
+    }
+  }
+
   if (isLiveStaticHost()) {
     return {
       success: true,
       message: 'Application review recorded successfully.',
       status: payload.status,
-      challanNumber: 'CHN-20260726-' + Math.floor(1000 + Math.random() * 9000)
+      challanNumber: challanNo
     };
   }
   try {
@@ -266,7 +299,7 @@ export const reviewApplication = async (id: number, payload: ReviewApplicationPa
       success: true,
       message: 'Application review recorded successfully.',
       status: payload.status,
-      challanNumber: 'CHN-20260726-' + Math.floor(1000 + Math.random() * 9000)
+      challanNumber: challanNo
     };
   }
 };
@@ -359,6 +392,19 @@ const mockChallans: ChallanData[] = [
     applicant_name: 'Ayesha Khan'
   }
 ];
+
+export const getStoredChallans = (): ChallanData[] => {
+  const saved = localStorage.getItem('pce_challans');
+  if (saved !== null) {
+    try { return JSON.parse(saved); } catch (e) {}
+  }
+  localStorage.setItem('pce_challans', JSON.stringify(mockChallans));
+  return mockChallans;
+};
+
+export const setStoredChallans = (list: ChallanData[]) => {
+  localStorage.setItem('pce_challans', JSON.stringify(list));
+};
 
 export const getChallans = async (params: {
   status?: string;

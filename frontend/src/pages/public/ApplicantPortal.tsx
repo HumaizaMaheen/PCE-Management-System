@@ -9,6 +9,13 @@ export const ApplicantPortal: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [appData, setAppData] = useState<ApplicationTrackResponse | null>(null);
 
+  // Payment upload state
+  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
+  const [paymentMode, setPaymentMode] = useState<string>('Bank Transfer (Habib Bank Ltd)');
+  const [trxId, setTrxId] = useState<string>('');
+  const [receiptSubmitted, setReceiptSubmitted] = useState<boolean>(false);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState<boolean>(false);
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!refNumber.trim()) return;
@@ -16,6 +23,7 @@ export const ApplicantPortal: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setAppData(null);
+    setReceiptSubmitted(false);
 
     try {
       const res = await trackApplication(refNumber.trim().toUpperCase());
@@ -30,6 +38,41 @@ export const ApplicantPortal: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handlePaymentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!trxId.trim() || !appData) return;
+
+    setIsSubmittingPayment(true);
+    setTimeout(() => {
+      const savedPayments = localStorage.getItem('pce_payments');
+      const list = savedPayments ? JSON.parse(savedPayments) : [];
+      const newPayment = {
+        id: Date.now(),
+        payment_no: 'PAY-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000),
+        application_id: 100,
+        member_id: null,
+        applicant_name: appData.applicantName,
+        applicant_email: appData.email || 'applicant@gmail.com',
+        challan_no: 'CHN-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000),
+        amount: 7000,
+        payment_mode: paymentMode,
+        transaction_id: trxId.trim(),
+        payment_date: new Date().toISOString().split('T')[0],
+        receipt_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&q=80',
+        verification_status: 'Submitted',
+        verified_by: null,
+        verified_at: null,
+        notes: 'Payment receipt uploaded via Public Portal.'
+      };
+      list.unshift(newPayment);
+      localStorage.setItem('pce_payments', JSON.stringify(list));
+
+      setIsSubmittingPayment(false);
+      setShowPaymentModal(false);
+      setReceiptSubmitted(true);
+    }, 600);
   };
 
   const getStatusBadge = (status: string) => {
@@ -205,7 +248,19 @@ export const ApplicantPortal: React.FC = () => {
                   <p className="leading-relaxed">
                     Transfer the total PKR 7,000 to the official bank account (Habib Bank Ltd, Account Title: Pakistan Chamber of Education, IBAN: PK12 HABB 0012 3456 7890 1203). Take a photograph/screenshot of your payment confirmation voucher, and send it to our office WhatsApp number <strong>+92 62 1234567</strong>.
                   </p>
-                  <div className="pt-2">
+                  {receiptSubmitted && (
+                    <div className="bg-[#4CAF50]/10 border-l-4 border-[#4CAF50] p-4 text-xs text-[#2E7D32] rounded-r-lg font-poppins">
+                      <p className="font-bold flex items-center gap-1 text-sm">
+                        <span className="material-icons text-base">check_circle</span>
+                        Payment Receipt Submitted Successfully!
+                      </p>
+                      <p className="mt-1 leading-relaxed">
+                        Your payment transaction receipt has been submitted to the Chamber Accounts Department. Our finance team will verify the payment and issue your official <strong>Membership ID</strong> & <strong>Login Credentials</strong> shortly.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="pt-2 flex flex-wrap gap-3">
                     <button 
                       type="button"
                       onClick={() => {
@@ -228,6 +283,15 @@ export const ApplicantPortal: React.FC = () => {
                     >
                       <span className="material-icons text-sm">picture_as_pdf</span>
                       Download Dues Challan PDF
+                    </button>
+
+                    <button 
+                      type="button"
+                      onClick={() => setShowPaymentModal(true)}
+                      className="inline-flex items-center gap-2 bg-[#C8A951] hover:bg-[#A08236] text-white px-5 py-2.5 rounded-lg text-xs font-bold font-poppins shadow-sm transition cursor-pointer"
+                    >
+                      <span className="material-icons text-sm">cloud_upload</span>
+                      Submit Payment Receipt Online
                     </button>
                   </div>
                 </div>
@@ -361,6 +425,110 @@ export const ApplicantPortal: React.FC = () => {
                 </div>
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {/* Payment Receipt Upload Modal */}
+        {showPaymentModal && appData && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 animate-fadeIn">
+              <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+                <h3 className="font-poppins font-bold text-base text-gray-800 flex items-center gap-2">
+                  <span className="material-icons text-primary">cloud_upload</span>
+                  Submit Payment Receipt
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition"
+                >
+                  <span className="material-icons text-xl">close</span>
+                </button>
+              </div>
+
+              <form onSubmit={handlePaymentSubmit} className="mt-4 space-y-4 font-inter text-xs">
+                <div>
+                  <label className="block text-gray-600 font-bold mb-1">Applicant Name</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={appData.applicantName}
+                    className="w-full bg-gray-100 border border-gray-200 rounded-lg p-2.5 text-gray-700 font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-600 font-bold mb-1">Payment Amount (PKR)</label>
+                  <input
+                    type="text"
+                    disabled
+                    value="PKR 7,000 (Admission Fee & 1st Monthly Dues)"
+                    className="w-full bg-primary/10 border border-primary/20 rounded-lg p-2.5 text-primary font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-600 font-bold mb-1">Select Payment Channel *</label>
+                  <select
+                    value={paymentMode}
+                    onChange={(e) => setPaymentMode(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-800 font-medium focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  >
+                    <option value="Bank Transfer (Habib Bank Ltd)">Bank Transfer (Habib Bank Ltd - IBAN: PK12 HABB 0012 3456 7890 1203)</option>
+                    <option value="JazzCash Direct Deposit">JazzCash Transfer (+92 300 1234567)</option>
+                    <option value="EasyPaisa Mobile Account">EasyPaisa Transfer (+92 301 9876543)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-gray-600 font-bold mb-1">Bank / JazzCash Transaction Reference ID *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. TRX9887765123"
+                    value={trxId}
+                    onChange={(e) => setTrxId(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg p-2.5 text-gray-800 font-mono tracking-wider focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-600 font-bold mb-1">Attach Receipt Photograph / Screenshot</label>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+                  />
+                </div>
+
+                <div className="pt-3 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowPaymentModal(false)}
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-lg transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingPayment}
+                    className="flex-1 bg-primary hover:bg-[#004C38] text-white font-bold py-2.5 rounded-lg shadow-sm transition flex items-center justify-center gap-1 disabled:opacity-50"
+                  >
+                    {isSubmittingPayment ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-icons text-sm">send</span>
+                        Submit Receipt
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
