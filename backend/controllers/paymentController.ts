@@ -330,7 +330,25 @@ export const verifyPayment = async (req: AuthenticatedRequest, res: Response) =>
         let memberUserId: number;
 
         if (existingUser.length > 0) {
-          memberUserId = existingUser[0].id;
+          // Check if this user_id is already linked to an existing member
+          const [memberWithUser] = await connection.query<RowDataPacket[]>(
+            'SELECT id FROM members WHERE user_id = ?',
+            [existingUser[0].id]
+          );
+
+          if (memberWithUser.length === 0) {
+            memberUserId = existingUser[0].id;
+          } else {
+            // Create a new unique user account for this applicant
+            const uniqueEmail = `applicant_${app.id}_${app.email}`;
+            const [userResult] = await connection.query<ResultSetHeader>(
+              `INSERT INTO users (role_id, full_name, email, password, status)
+               VALUES (4, ?, ?, ?, 'Active')`,
+              [app.full_name, uniqueEmail, hashedPassword]
+            );
+            memberUserId = userResult.insertId;
+            memberEmail = uniqueEmail;
+          }
         } else {
           // Role ID 4 = Viewer (standard portal user)
           const [userResult] = await connection.query<ResultSetHeader>(
