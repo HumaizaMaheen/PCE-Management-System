@@ -1,5 +1,10 @@
 import api, { isLiveStaticHost } from './api';
-import { removePurgedKey } from './adminService';
+import { 
+  removePurgedKey, 
+  isPurgedKey, 
+  getStoredApplications, 
+  getStoredMembers 
+} from './adminService';
 
 export interface ApplicationSubmitResponse {
   success: boolean;
@@ -30,12 +35,9 @@ export const submitApplication = async (formData: FormData): Promise<Application
   const rawCnic = (formData.get('cnic') as string) || '';
   const cnicDigits = rawCnic.replace(/[^0-9]/g, '');
 
-  // Check duplicate credentials against active Applications & Members in LocalStorage
-  const savedApps = localStorage.getItem('pce_applications');
-  const savedMembers = localStorage.getItem('pce_members');
-  
-  let appsList: any[] = savedApps !== null ? JSON.parse(savedApps) : [];
-  let membersList: any[] = savedMembers !== null ? JSON.parse(savedMembers) : [];
+  // Check duplicate credentials against active (non-purged) Applications & Members in LocalStorage
+  const appsList = getStoredApplications().filter(a => !isPurgedKey(a.cnic) && !isPurgedKey(a.email));
+  const membersList = getStoredMembers().filter(m => !isPurgedKey(m.cnic) && !isPurgedKey(m.email));
 
   const isDuplicateApp = appsList.some(a => 
     (email !== '' && a.email?.toLowerCase().trim() === email) || 
@@ -91,8 +93,8 @@ export const submitApplication = async (formData: FormData): Promise<Application
     removePurgedKey(cnicDigits);
     if (email) removePurgedKey(email);
 
-    const existing = savedApps ? JSON.parse(savedApps) : [];
-    existing.unshift(newApp);
+    const existing = getStoredApplications();
+    existing.unshift(newApp as any);
     localStorage.setItem('pce_applications', JSON.stringify(existing));
   } catch (e) {}
 

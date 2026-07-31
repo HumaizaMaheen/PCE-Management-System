@@ -159,7 +159,7 @@ export const removePurgedKey = (key?: string | null) => {
   localStorage.setItem('pce_purged_keys', JSON.stringify(updated));
 };
 
-const isPurgedKey = (key?: string | null): boolean => {
+export const isPurgedKey = (key?: string | null): boolean => {
   if (!key) return false;
   const list = getPurgedKeys();
   const norm = key.toLowerCase().trim();
@@ -335,12 +335,30 @@ export const deleteApplication = async (id: number): Promise<{ success: boolean;
       (targetEmail === '' || (p.applicant_email?.toLowerCase().trim() !== targetEmail && p.email?.toLowerCase().trim() !== targetEmail))
     );
     setStoredPayments(updatedPayments);
+    // 3. Purge matching items from mock memory arrays
+    for (let i = mockApplications.length - 1; i >= 0; i--) {
+      const a = mockApplications[i];
+      if (
+        a.id === id || 
+        (targetCnicDigits !== '' && cleanStr(a.cnic) === targetCnicDigits) || 
+        (targetEmail !== '' && a.email?.toLowerCase().trim() === targetEmail)
+      ) {
+        mockApplications.splice(i, 1);
+      }
+    }
+
+    for (let i = mockMembers.length - 1; i >= 0; i--) {
+      const m = mockMembers[i];
+      if (
+        m.application_id === id || 
+        (targetCnicDigits !== '' && cleanStr(m.cnic) === targetCnicDigits) || 
+        (targetEmail !== '' && m.email?.toLowerCase().trim() === targetEmail)
+      ) {
+        mockMembers.splice(i, 1);
+      }
+    }
   }
 
-  const idx = mockApplications.findIndex(a => a.id === id);
-  if (idx !== -1) {
-    mockApplications.splice(idx, 1);
-  }
   if (isLiveStaticHost()) return { success: true, message: 'Application and associated CNIC records deleted successfully.' };
   try {
     const response = await api.delete<{ success: boolean; message: string }>(`/applications/${id}`);
@@ -752,7 +770,7 @@ const mockMembers: MemberData[] = [
 ];
 
 // Members LocalStorage Persistence Helpers
-const getStoredMembers = (): MemberData[] => {
+export const getStoredMembers = (): MemberData[] => {
   const saved = localStorage.getItem('pce_members');
   if (saved !== null) {
     try { return JSON.parse(saved); } catch (e) {}
@@ -762,7 +780,7 @@ const getStoredMembers = (): MemberData[] => {
   return filteredMock;
 };
 
-const setStoredMembers = (list: MemberData[]) => {
+export const setStoredMembers = (list: MemberData[]) => {
   localStorage.setItem('pce_members', JSON.stringify(list));
 };
 
@@ -861,12 +879,31 @@ export const deleteMember = async (id: number): Promise<{ success: boolean; mess
       (targetEmail === '' || (p.applicant_email?.toLowerCase().trim() !== targetEmail && p.email?.toLowerCase().trim() !== targetEmail))
     );
     setStoredPayments(updatedPayments);
+
+    // 3. Purge matching items from mock memory arrays so fallback checks never see them
+    for (let i = mockMembers.length - 1; i >= 0; i--) {
+      const m = mockMembers[i];
+      if (
+        m.id === id || 
+        (targetCnicDigits !== '' && cleanStr(m.cnic) === targetCnicDigits) || 
+        (targetEmail !== '' && m.email?.toLowerCase().trim() === targetEmail)
+      ) {
+        mockMembers.splice(i, 1);
+      }
+    }
+
+    for (let i = mockApplications.length - 1; i >= 0; i--) {
+      const a = mockApplications[i];
+      if (
+        a.id === targetMember.application_id || 
+        (targetCnicDigits !== '' && cleanStr(a.cnic) === targetCnicDigits) || 
+        (targetEmail !== '' && a.email?.toLowerCase().trim() === targetEmail)
+      ) {
+        mockApplications.splice(i, 1);
+      }
+    }
   }
 
-  const idx = mockMembers.findIndex(m => m.id === id);
-  if (idx !== -1) {
-    mockMembers.splice(idx, 1);
-  }
   if (isLiveStaticHost()) return { success: true, message: 'Member and all associated CNIC records & credentials purged successfully.' };
   try {
     const response = await api.delete<{ success: boolean; message: string }>(`/members/${id}`);
