@@ -181,14 +181,50 @@ export const Login: React.FC = () => {
             </button>
           </form>
 
-          {/* Test Accounts Tip */}
-          <div className="bg-[#F0F4F2] border border-primary/10 p-4 rounded-lg text-xs space-y-1.5 text-primary-dark">
-            <div className="font-semibold flex items-center gap-1">
-              <span className="material-icons text-sm">lightbulb</span>
-              <span>Dev Credentials:</span>
+          {/* Quick Login & Role Selection Panel */}
+          <div className="bg-[#F0F4F2] border border-primary/10 p-4 rounded-xl text-xs space-y-3 font-poppins">
+            <div className="font-bold flex items-center justify-between text-primary">
+              <span className="flex items-center gap-1">
+                <span className="material-icons text-sm text-primary">vpn_key</span>
+                Quick Workspace Access
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem('token');
+                  localStorage.removeItem('user');
+                  window.location.reload();
+                }}
+                className="text-[10px] text-gray-500 hover:text-danger underline font-medium"
+              >
+                Clear Stored Session
+              </button>
             </div>
-            <div>
-              <strong>Super Admin</strong>: <code>admin@pce.org.pk</code> / <code>AdminPCE@2026</code>
+            
+            <div className="grid grid-cols-2 gap-2 font-inter">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('admin@pce.org.pk');
+                  setPassword('AdminPCE@2026');
+                }}
+                className="bg-primary/10 hover:bg-primary hover:text-white text-primary p-2.5 rounded-lg border border-primary/20 text-left transition"
+              >
+                <strong className="block text-[11px] font-poppins">Super Admin</strong>
+                <span className="text-[10px] opacity-80 block truncate">admin@pce.org.pk</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('member@gmail.com');
+                  setPassword('PCE@2026');
+                }}
+                className="bg-accent/10 hover:bg-accent hover:text-white text-accent-dark p-2.5 rounded-lg border border-accent/20 text-left transition"
+              >
+                <strong className="block text-[11px] font-poppins">Chamber Member</strong>
+                <span className="text-[10px] opacity-80 block truncate">member@gmail.com</span>
+              </button>
             </div>
           </div>
         </div>

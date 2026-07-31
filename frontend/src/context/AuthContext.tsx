@@ -30,35 +30,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const token = localStorage.getItem('token');
       const savedUser = localStorage.getItem('user');
 
-      if (savedUser) {
-        try {
-          setUser(JSON.parse(savedUser));
-        } catch (e) {}
-      }
-
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      if (isLiveStaticHost()) {
+      if (!token || !savedUser) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
         setLoading(false);
         return;
       }
 
       try {
-        const response = await api.get('/auth/me');
-        setUser(response.data.user);
-      } catch (error) {
-        // Keep stored demo user on live site
-        if (!isLiveStaticHost()) {
+        const parsed = JSON.parse(savedUser);
+        setUser(parsed);
+      } catch (e) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+      }
+
+      if (!isLiveStaticHost()) {
+        try {
+          const response = await api.get('/auth/me');
+          setUser(response.data.user);
+        } catch (error) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           setUser(null);
         }
-      } finally {
-        setLoading(false);
       }
+      setLoading(false);
     };
     checkAuth();
   }, []);

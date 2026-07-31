@@ -53,42 +53,15 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: strin
     return <Navigate to="/login" replace />;
   }
 
-  // Restrict Member role from Admin panel
+  // Strictly enforce allowed Admin roles — redirect non-admins directly to login page
   if (allowedRoles && !hasRole(allowedRoles)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F7F9FA] p-6">
-        <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 max-w-md w-full text-center animate-fadeIn">
-          <div className="w-16 h-16 bg-danger/10 text-danger rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="material-icons text-3xl">gpp_bad</span>
-          </div>
-          <h2 className="text-xl font-extrabold font-poppins text-[#333333] mb-2">Admin Access Required</h2>
-          <p className="text-gray-500 text-xs leading-relaxed mb-6 font-inter">
-            Your account role <strong>({user.role})</strong> is restricted to Member Services. Only authorized Chamber Executive Board Members can access the Administration Management System.
-          </p>
-          <div className="flex flex-col gap-3">
-            <Link
-              to="/portal"
-              className="bg-primary hover:bg-[#004C38] text-white font-bold py-2.5 px-6 rounded-lg text-xs font-poppins transition shadow-sm"
-            >
-              Go to Member & Applicant Portal
-            </Link>
-            <Link
-              to="/"
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-lg text-xs font-poppins transition"
-            >
-              Back to Home Page
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;
 };
 
-// Helper for Return Link inside error views
-import { Link } from 'react-router-dom';
+
 
 const AppRoutes: React.FC = () => {
   return (
