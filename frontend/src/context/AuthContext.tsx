@@ -29,10 +29,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
       const savedUser = localStorage.getItem('user');
+      const rememberMe = localStorage.getItem('pce_remember_me') === 'true';
+      const sessionActive = sessionStorage.getItem('pce_logged_in') === 'true';
+
+      // Purge old demo/unverified sessions if not explicitly logged in via rememberMe or active session
+      if (!rememberMe && !sessionActive) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('pce_logged_in');
+        setUser(null);
+        setLoading(false);
+        return;
+      }
 
       if (!token || !savedUser) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        sessionStorage.removeItem('pce_logged_in');
         setUser(null);
         setLoading(false);
         return;
@@ -44,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (e) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        sessionStorage.removeItem('pce_logged_in');
         setUser(null);
       }
 
@@ -54,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (error) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          sessionStorage.removeItem('pce_logged_in');
           setUser(null);
         }
       }
@@ -73,6 +88,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       full_name: isSuperAdmin ? 'Super Admin' : (formattedName || 'Chamber Member'),
       role: isSuperAdmin ? 'Super Admin' : 'Member'
     };
+
+    if (rememberMe) {
+      localStorage.setItem('pce_remember_me', 'true');
+    } else {
+      sessionStorage.setItem('pce_logged_in', 'true');
+    }
 
     // On live static host (GitHub Pages, Vercel, phone), perform smooth instant login
     if (isLiveStaticHost()) {
@@ -111,6 +132,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('pce_remember_me');
+      sessionStorage.removeItem('pce_logged_in');
       setUser(null);
     }
   };
