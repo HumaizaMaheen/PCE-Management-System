@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const isMember = user?.role === 'Viewer';
+  const isMember = user?.role === 'Member';
 
   // Admin Dashboard State
   const [kpis, setKpis] = useState<DashboardKPIs | null>(null);
@@ -42,7 +42,7 @@ export default function Dashboard() {
           } catch (e) {}
         }
       } catch (err: any) {
-        if (err.message && !err.message.includes('403')) {
+        if (err.message && !err.message.includes('403') && !err.message.includes('Forbidden')) {
           setError(err.message || 'Failed to fetch dashboard data');
         }
       } finally {
@@ -61,7 +61,7 @@ export default function Dashboard() {
     );
   }
 
-  if (error && !error.includes('403')) {
+  if (error && !error.includes('403') && !error.includes('Forbidden')) {
     return (
       <div className="bg-danger/10 border border-danger/20 text-danger p-4 rounded-lg flex items-center gap-3">
         <span className="material-icons">error</span>
