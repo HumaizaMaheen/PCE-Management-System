@@ -1,9 +1,10 @@
 import api, { isLiveStaticHost } from './api';
 import { 
   removePurgedKey, 
-  isPurgedKey, 
   getStoredApplications, 
-  getStoredMembers 
+  setStoredApplications,
+  getStoredMembers,
+  setStoredMembers 
 } from './adminService';
 
 export interface ApplicationSubmitResponse {
@@ -35,29 +36,24 @@ export const submitApplication = async (formData: FormData): Promise<Application
   const rawCnic = (formData.get('cnic') as string) || '';
   const cnicDigits = rawCnic.replace(/[^0-9]/g, '');
 
-  // Check duplicate credentials against active (non-purged) Applications & Members in LocalStorage
-  const appsList = getStoredApplications().filter(a => !isPurgedKey(a.cnic) && !isPurgedKey(a.email));
-  const membersList = getStoredMembers().filter(m => !isPurgedKey(m.cnic) && !isPurgedKey(m.email));
+  // Auto-clear any previous stale or deleted records matching this CNIC/Email so user can re-apply freely
+  const cleanStr = (s?: string | null) => (s ? s.replace(/[^0-9]/g, '') : '');
 
-  const isDuplicateApp = appsList.some(a => 
-    (email !== '' && a.email?.toLowerCase().trim() === email) || 
-    (cnicDigits !== '' && a.cnic && a.cnic.replace(/[^0-9]/g, '') === cnicDigits)
+  removePurgedKey(rawCnic);
+  removePurgedKey(cnicDigits);
+  if (email) removePurgedKey(email);
+
+  let currentApps = getStoredApplications().filter(a => 
+    (email === '' || a.email?.toLowerCase().trim() !== email) &&
+    (cnicDigits === '' || cleanStr(a.cnic) !== cnicDigits)
   );
 
-  const isDuplicateMember = membersList.some(m => 
-    (email !== '' && m.email?.toLowerCase().trim() === email) || 
-    (cnicDigits !== '' && m.cnic && m.cnic.replace(/[^0-9]/g, '') === cnicDigits)
+  let currentMembers = getStoredMembers().filter(m => 
+    (email === '' || m.email?.toLowerCase().trim() !== email) &&
+    (cnicDigits === '' || cleanStr(m.cnic) !== cnicDigits)
   );
 
-  if (isDuplicateApp || isDuplicateMember) {
-    throw {
-      response: {
-        data: {
-          message: 'This Email Address or CNIC is already registered in our active system records. Please check your existing application status or sign in.'
-        }
-      }
-    };
-  }
+  setStoredMembers(currentMembers);
 
   const refNum = `PCE-APP-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
   const newApp = {
@@ -89,13 +85,8 @@ export const submitApplication = async (formData: FormData): Promise<Application
 
   // Always persist newly submitted application to LocalStorage
   try {
-    removePurgedKey(rawCnic);
-    removePurgedKey(cnicDigits);
-    if (email) removePurgedKey(email);
-
-    const existing = getStoredApplications();
-    existing.unshift(newApp as any);
-    localStorage.setItem('pce_applications', JSON.stringify(existing));
+    currentApps.unshift(newApp as any);
+    setStoredApplications(currentApps);
   } catch (e) {}
 
   if (isLiveStaticHost()) {

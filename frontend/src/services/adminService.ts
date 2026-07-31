@@ -177,7 +177,7 @@ export const getStoredApplications = (): ApplicationData[] => {
   return filteredMock;
 };
 
-const setStoredApplications = (list: ApplicationData[]) => {
+export const setStoredApplications = (list: ApplicationData[]) => {
   localStorage.setItem('pce_applications', JSON.stringify(list));
 };
 
